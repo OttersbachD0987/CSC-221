@@ -9,7 +9,7 @@ def dis_score(score):
             print("Your score is", score)
             print("Your score is below 80!!!")
             print("You didn't pass the exam")
-                
+
 def menu():
     print('-'*10 + 'MENU' + '-'*10)
     print('1) Run Program')
