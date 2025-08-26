@@ -3,7 +3,6 @@ from EditorEnums import EditorMode
 import os, curses, curses.ascii, sys, KeyCodes
 from io import BytesIO
 
-
 class EditorInstance:
     def __init__(self, a_filepath: str):
         self.filepath: str = a_filepath
@@ -57,15 +56,36 @@ class EditorInstance:
                         self.SetMousePos(self.byte_stream.getvalue().rfind(b'\n', 0, self.mouse_pos) - 1)
                     case curses.KEY_DOWN:
                         self.SetMousePos(self.mouse_pos + len(self.byte_stream.readline()) + 1)
+                    case KeyCodes.KEY_BACKSPACE:
+                        if self.mouse_pos > 0:
+                            temp_buffer: bytes = self.byte_stream.getvalue()[0:self.mouse_pos - 1] + self.byte_stream.getvalue()[self.mouse_pos::]
+                            self.byte_stream.seek(0)
+                            self.byte_stream.truncate()
+                            self.byte_stream.write(temp_buffer)
+                            self.SetMousePos(self.mouse_pos - 1)
+                    case 13 | 10:
+                        if False:
+                            self.byte_stream.write(b'\n')
+                        else:
+                            temp_buffer: bytes = self.byte_stream.getvalue()[self.mouse_pos::]
+                            self.byte_stream.write(b'\n')
+                            self.byte_stream.write(temp_buffer)
+                            self.SetMousePos(self.mouse_pos + 1)
                     case _:
                         if curses.ascii.isprint(key):
-                            self.byte_stream.write(bytes([key]))
+                            if False:
+                                self.byte_stream.write(bytes([key]))
+                            else:
+                                temp_buffer: bytes = self.byte_stream.getvalue()[self.mouse_pos::]
+                                self.byte_stream.write(bytes([key]))
+                                self.byte_stream.write(temp_buffer)
+                                self.SetMousePos(self.mouse_pos + 1)
             case EditorMode.COMMAND:
                 match key:
                     case KeyCodes.KEY_ESCAPE:
                         self.mode = EditorMode.NORMAL
                         self.command_buffer = ""
-                    case 8:
+                    case KeyCodes.KEY_BACKSPACE:
                         self.command_buffer = self.command_buffer[:-1]
                     case 13 | 10:
                         if self.command_buffer == "q":
@@ -102,7 +122,7 @@ class EditorInstance:
         self.screen.refresh()
 
     def SetMousePos(self, a_pos: int) -> None:
-        self.mouse_pos = min(max(a_pos, 0), sys.getsizeof(self.byte_stream))
+        self.mouse_pos = min(max(a_pos, 0), self.byte_stream.seek(0, 2))
         self.byte_stream.seek(self.mouse_pos)
     
     def __del__(self):
@@ -118,7 +138,9 @@ def main():
     namespace: Namespace = parser.parse_args()
 
     if not os.path.exists(namespace.filepath):
-        os.makedirs(os.path.split(namespace.filepath)[0])
+        folders: str = os.path.split(namespace.filepath)[0]
+        if folders != "" and not os.path.exists(folders):
+            os.makedirs(folders)
         with open(namespace.filepath, "w") as _:
             ...
 

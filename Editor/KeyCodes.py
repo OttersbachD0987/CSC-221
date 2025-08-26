@@ -1,9 +1,10 @@
-KEY_ESCAPE: int = 27
-KEY_COLON:  int = 58
+KEY_BACKSPACE: int = 8
+KEY_ESCAPE:    int = 27
+KEY_COLON:     int = 58
 
-KEY_a: int =  97
-KEY_b: int =  98
-KEY_c: int =  99
+KEY_a: int = 97
+KEY_b: int = 98
+KEY_c: int = 99
 KEY_d: int = 100
 KEY_e: int = 101
 KEY_f: int = 102
