@@ -9,3 +9,7 @@ class EditorMode(Enum):
 class FileType(Enum):
     TEXT = ".txt"
     PYTHON = ".py"
+
+class CursorMode(Enum):
+    INSERT  = 0
+    REPLACE = 1
