@@ -1,7 +1,7 @@
+# fmt: off
 from argparse import ArgumentParser, Namespace
 from EditorEnums import EditorMode
-import os, curses, curses.ascii, sys, KeyCodes
-from io import BytesIO
+import os, curses, curses.ascii, KeyCodes
 
 class EditorInstance:
     def __init__(self, a_filepath: str):
@@ -12,6 +12,7 @@ class EditorInstance:
         self.command_buffer: str = ""
         self.mouse_x_pos: int = 0
         self.mouse_y_pos: int = 0
+        self.screen_x_pos: int = 0
         self.screen_y_pos: int = 0
         curses.noecho()
         self.screen.keypad(True)
@@ -101,7 +102,6 @@ class EditorInstance:
                     case _:
                         if curses.ascii.isprint(key):
                             self.command_buffer += chr(key)
-        a = max(self.mouse_x_pos, 0)
         match self.mode:
             case EditorMode.NORMAL:
                 self.screen.addstr("NORMAL || ")
@@ -115,11 +115,11 @@ class EditorInstance:
         self.screen.hline(1, 0, '=', curses.COLS - 1)
         self.screen.move(2, 0)
         for line in range(self.screen_y_pos, min(self.screen_y_pos + curses.LINES - 2, len(self.content))):
-            self.screen.addstr(2 + line - self.screen_y_pos, 0, f"{line + 1:>5}. {self.content[line]}")
+            self.screen.addstr(2 + line - self.screen_y_pos, 0, f"{line + 1:>5}. {self.content[line][self.screen_x_pos:min(curses.COLS - 8, len(self.content[line]) + 1)]}")
         if self.mode == EditorMode.COMMAND:
             self.screen.addstr(0, 10, self.command_buffer)
         else:
-            self.screen.move(2 + self.mouse_y_pos - self.screen_y_pos, self.mouse_x_pos + 7)
+            self.screen.move(2 + self.mouse_y_pos - self.screen_y_pos, self.mouse_x_pos - self.screen_x_pos + 7)
         self.screen.refresh()
 
     def SetMousePosX(self, a_pos: int) -> None:
@@ -136,6 +136,11 @@ class EditorInstance:
                 self.mouse_x_pos = 0
             else:
                 self.mouse_x_pos = len(self.content[self.mouse_y_pos])
+
+        if self.mouse_x_pos < self.screen_x_pos:
+            self.screen_x_pos = self.mouse_x_pos
+        elif self.mouse_x_pos >= self.screen_x_pos + curses.COLS - 8:
+            self.screen_x_pos = self.mouse_x_pos - curses.COLS + 8
     
     def SetMousePosY(self, a_pos: int) -> None:
         self.mouse_y_pos = a_pos
@@ -148,8 +153,8 @@ class EditorInstance:
         
         if self.mouse_y_pos < self.screen_y_pos:
             self.screen_y_pos = self.mouse_y_pos
-        elif self.mouse_y_pos > self.screen_y_pos + curses.LINES - 2:
-            self.screen_y_pos = self.mouse_y_pos - curses.LINES + 2
+        elif self.mouse_y_pos >= self.screen_y_pos + curses.LINES - 3:
+            self.screen_y_pos = self.mouse_y_pos - curses.LINES + 3
     
     def __del__(self):
         curses.nocbreak()
@@ -177,3 +182,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+# fmt: on
+
