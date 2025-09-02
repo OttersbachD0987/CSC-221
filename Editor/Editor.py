@@ -23,11 +23,6 @@ class EditorInstance:
             if len(self.content) == 0: 
                 self.content = [""]
     
-    def Run(self) -> None:
-        self.Render()
-            
-        self.HandleInput()
-
     def HandleInput(self) -> None:
         key: int = self.screen.getch()
         
@@ -133,6 +128,8 @@ class EditorInstance:
         self.screen.refresh()
 
     def SetCursorPosX(self, a_pos: int) -> None:
+        """
+        """
         self.cursor_x_pos = a_pos
         if self.cursor_x_pos < 0:
             if self.cursor_y_pos > 0:
@@ -185,8 +182,8 @@ def main():
 
     editor = EditorInstance(namespace.filepath)
     while editor.running:
-        editor.Run()
-        
+        editor.Render()
+        editor.HandleInput()
     editor.Cleanup()
 
 if __name__ == "__main__":
