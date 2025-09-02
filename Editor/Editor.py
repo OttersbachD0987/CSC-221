@@ -1,7 +1,10 @@
 # fmt: off
 from argparse import ArgumentParser, Namespace
 from EditorEnums import EditorMode, CursorMode
-import os, curses, curses.ascii, KeyCodes
+import os
+import curses
+import curses.ascii
+import KeyCodes
 
 class EditorInstance:
     def __init__(self, a_filepath: str):
