@@ -10,14 +10,16 @@ class EditorInstance:
         self.running: bool = True
         self.screen: curses.window = curses.initscr()
         self.command_buffer: str = ""
-        self.mouse_pos: int = 0
+        self.mouse_x_pos: int = 0
+        self.mouse_y_pos: int = 0
+        self.screen_y_pos: int = 0
         curses.noecho()
         self.screen.keypad(True)
         curses.cbreak(True)
         with open(self.filepath, "rb+") as file:
-            print(file.read())
-        with open(self.filepath, "rb+") as file:
-            self.byte_stream: BytesIO = BytesIO(file.read().replace(b'\r\n', b'\n'))
+            self.content: list[str] = [line.decode().strip() for line in file.readlines()]
+            if len(self.content) == 0: 
+                self.content = [""]
     
     def Run(self):
         key: int = self.screen.getch()
@@ -27,13 +29,13 @@ class EditorInstance:
             case EditorMode.NORMAL:
                 match key:
                     case curses.KEY_LEFT | KeyCodes.KEY_h:
-                        self.SetMousePos(self.mouse_pos - 1)
+                        self.SetMousePosX(self.mouse_x_pos - 1)
                     case curses.KEY_RIGHT | KeyCodes.KEY_l:
-                        self.SetMousePos(self.mouse_pos + 1)
+                        self.SetMousePosX(self.mouse_x_pos + 1)
                     case curses.KEY_UP | KeyCodes.KEY_k:
-                        self.SetMousePos(self.byte_stream.getvalue().rfind(b'\n', 0, self.mouse_pos) - 1)
+                        self.SetMousePosY(self.mouse_y_pos - 1)
                     case curses.KEY_DOWN | KeyCodes.KEY_j:
-                        self.SetMousePos(self.mouse_pos + len(self.byte_stream.readline()))
+                        self.SetMousePosY(self.mouse_y_pos + 1)
                     case KeyCodes.KEY_COLON:
                         self.mode = EditorMode.COMMAND
                     case KeyCodes.KEY_i:
@@ -49,37 +51,38 @@ class EditorInstance:
                     case KeyCodes.KEY_ESCAPE:
                         self.mode = EditorMode.NORMAL
                     case curses.KEY_LEFT:
-                        self.SetMousePos(self.mouse_pos - 1)
+                        self.SetMousePosX(self.mouse_x_pos - 1)
                     case curses.KEY_RIGHT:
-                        self.SetMousePos(self.mouse_pos + 1)
+                        self.SetMousePosX(self.mouse_x_pos + 1)
                     case curses.KEY_UP:
-                        self.SetMousePos(self.byte_stream.getvalue().rfind(b'\n', 0, self.mouse_pos) - 1)
+                        self.SetMousePosY(self.mouse_y_pos - 1)
                     case curses.KEY_DOWN:
-                        self.SetMousePos(self.mouse_pos + len(self.byte_stream.readline()) + 1)
+                        self.SetMousePosY(self.mouse_y_pos + 1)
                     case KeyCodes.KEY_BACKSPACE:
-                        if self.mouse_pos > 0:
-                            temp_buffer: bytes = self.byte_stream.getvalue()[0:self.mouse_pos - 1] + self.byte_stream.getvalue()[self.mouse_pos::]
-                            self.byte_stream.seek(0)
-                            self.byte_stream.truncate()
-                            self.byte_stream.write(temp_buffer)
-                            self.SetMousePos(self.mouse_pos - 1)
+                        if self.mouse_x_pos > 0:
+                            self.content[self.mouse_y_pos] = self.content[self.mouse_y_pos][:self.mouse_x_pos - 1] + self.content[self.mouse_y_pos][self.mouse_x_pos::]
+                            self.SetMousePosX(self.mouse_x_pos - 1)
+                        elif self.mouse_y_pos > 0:
+                            new_mouse: int = len(self.content[self.mouse_y_pos - 1])
+                            self.content[self.mouse_y_pos - 1] += self.content.pop(self.mouse_y_pos)
+                            self.SetMousePosY(self.mouse_y_pos - 1)
+                            self.SetMousePosX(new_mouse)
                     case 13 | 10:
                         if False:
-                            self.byte_stream.write(b'\n')
+                            self.content.insert(self.mouse_y_pos + 1, self.content[self.mouse_y_pos][self.mouse_x_pos + 1::])
+                            self.content[self.mouse_y_pos] = self.content[self.mouse_y_pos][:self.mouse_x_pos]
+                            self.SetMousePosX(self.mouse_x_pos + 1)
                         else:
-                            temp_buffer: bytes = self.byte_stream.getvalue()[self.mouse_pos::]
-                            self.byte_stream.write(b'\n')
-                            self.byte_stream.write(temp_buffer)
-                            self.SetMousePos(self.mouse_pos + 1)
+                            self.content.insert(self.mouse_y_pos + 1, self.content[self.mouse_y_pos][self.mouse_x_pos::])
+                            self.content[self.mouse_y_pos] = self.content[self.mouse_y_pos][:self.mouse_x_pos]
+                            self.SetMousePosX(self.mouse_x_pos + 1)
                     case _:
                         if curses.ascii.isprint(key):
                             if False:
-                                self.byte_stream.write(bytes([key]))
+                                self.content[self.mouse_y_pos][self.mouse_x_pos] = chr(key)
                             else:
-                                temp_buffer: bytes = self.byte_stream.getvalue()[self.mouse_pos::]
-                                self.byte_stream.write(bytes([key]))
-                                self.byte_stream.write(temp_buffer)
-                                self.SetMousePos(self.mouse_pos + 1)
+                                self.content[self.mouse_y_pos] = self.content[self.mouse_y_pos][:self.mouse_x_pos] + chr(key) + self.content[self.mouse_y_pos][self.mouse_x_pos::]
+                                self.SetMousePosX(self.mouse_x_pos + 1)
             case EditorMode.COMMAND:
                 match key:
                     case KeyCodes.KEY_ESCAPE:
@@ -92,12 +95,13 @@ class EditorInstance:
                             self.running = False
                         elif self.command_buffer == "w":
                             with open(self.filepath, "wb") as file:
-                                file.write(self.byte_stream.getbuffer())
+                                file.write("\n".join(self.content).encode())
+                            self.mode = EditorMode.NORMAL
+                            self.command_buffer = ""
                     case _:
                         if curses.ascii.isprint(key):
                             self.command_buffer += chr(key)
-        a = max(self.byte_stream.getvalue().rfind(b'\n', 0, self.mouse_pos) + 1, 0)
-        self.byte_stream.seek(a)
+        a = max(self.mouse_x_pos, 0)
         match self.mode:
             case EditorMode.NORMAL:
                 self.screen.addstr("NORMAL || ")
@@ -110,27 +114,48 @@ class EditorInstance:
         self.screen.hline(0, 10, " ", curses.COLS - 9)
         self.screen.hline(1, 0, '=', curses.COLS - 1)
         self.screen.move(2, 0)
-        index: int = self.byte_stream.getvalue().count(b'\n', 0, max(self.byte_stream.tell(), 0)) + 1
-        for line in self.byte_stream:
-            self.screen.addstr(f"{index:>5}. {line.decode()}")
-            index += 1
-        self.byte_stream.seek(self.mouse_pos)
+        for line in range(self.screen_y_pos, min(self.screen_y_pos + curses.LINES - 2, len(self.content))):
+            self.screen.addstr(2 + line - self.screen_y_pos, 0, f"{line + 1:>5}. {self.content[line]}")
         if self.mode == EditorMode.COMMAND:
             self.screen.addstr(0, 10, self.command_buffer)
         else:
-            self.screen.move(2, self.mouse_pos - max(a, 0) + 7)
+            self.screen.move(2 + self.mouse_y_pos - self.screen_y_pos, self.mouse_x_pos + 7)
         self.screen.refresh()
 
-    def SetMousePos(self, a_pos: int) -> None:
-        self.mouse_pos = min(max(a_pos, 0), self.byte_stream.seek(0, 2))
-        self.byte_stream.seek(self.mouse_pos)
+    def SetMousePosX(self, a_pos: int) -> None:
+        self.mouse_x_pos = a_pos
+        if self.mouse_x_pos < 0:
+            if self.mouse_y_pos > 0:
+                self.SetMousePosY(self.mouse_y_pos - 1)
+                self.mouse_x_pos = len(self.content[self.mouse_y_pos])
+            else:
+                self.mouse_x_pos = 0
+        elif self.mouse_x_pos > len(self.content[self.mouse_y_pos]):
+            if self.mouse_y_pos < len(self.content) - 1:
+                self.SetMousePosY(self.mouse_y_pos + 1)
+                self.mouse_x_pos = 0
+            else:
+                self.mouse_x_pos = len(self.content[self.mouse_y_pos])
+    
+    def SetMousePosY(self, a_pos: int) -> None:
+        self.mouse_y_pos = a_pos
+        if self.mouse_y_pos < 0:
+            self.mouse_y_pos = 0
+        elif self.mouse_y_pos >= len(self.content):
+            self.mouse_y_pos = len(self.content) - 1
+        
+        self.SetMousePosX(min(len(self.content[self.mouse_y_pos]), self.mouse_x_pos))
+        
+        if self.mouse_y_pos < self.screen_y_pos:
+            self.screen_y_pos = self.mouse_y_pos
+        elif self.mouse_y_pos > self.screen_y_pos + curses.LINES - 2:
+            self.screen_y_pos = self.mouse_y_pos - curses.LINES + 2
     
     def __del__(self):
         curses.nocbreak()
         self.screen.keypad(False)
         curses.echo()
         curses.endwin()
-        self.byte_stream.close()
 
 def main():
     parser: ArgumentParser = ArgumentParser()

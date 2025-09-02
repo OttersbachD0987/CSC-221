@@ -1,5 +1,7 @@
-Hello.
+Hello
 
-I am a test.
+This is a text editor.
 
-A new line.
+
+
+I think that it works.
