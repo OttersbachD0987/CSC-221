@@ -11,8 +11,8 @@ allData = {
 
 
 def main() -> None:
-    running: bool = True
-    while running:
+    countryCode: str = ""
+    while countryCode != "STOP":
         countryCode: str = input("Please enter a country code or stop: ").upper()
         if countryCode in allData.keys():
             statistic: str = input("Please enter a statistic: ").lower()
@@ -22,7 +22,6 @@ def main() -> None:
                 print("That is an invalid statistic.")
         elif countryCode == "STOP":
             print("Terminating program.")
-            running = False
         else:
             print("That is an invalid country code.")
 
