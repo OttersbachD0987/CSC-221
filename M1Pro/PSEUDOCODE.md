@@ -1,3 +1,2 @@
 # Pseudocode
 
-SET b
