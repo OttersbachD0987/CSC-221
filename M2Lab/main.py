@@ -17,14 +17,18 @@ def Main() -> None:
     merged = constituents.join(usePrices)
     print("Joined data")
 
+    # I don't like doing it like this.
     bonk: dict[str, list[float]] = {}
 
     for row in merged.transpose():
         for col in usePrices:
             bonk[row] = bonk.get(row, []) + ([usePrices[col][row]] if row in usePrices[col] and isinstance(usePrices[col][row], float) else [])
     
-    merged["difference"] = merged.apply(lambda r: bonk[r.name][-2] - bonk[r.name][-1] if len(bonk[r.name]) > 0 else None)
-    print(merged)
+    merged["difference"] = merged.apply(lambda r: bonk[r.name][-2] - bonk[r.name][-1] if len(bonk[r.name]) > 1 else None, axis=1)
+    print("Added difference column")
+    
+    missing = merged[merged.difference.isna()]
+    print("Determined Missing Stocks")
 
 if __name__ == "__main__":
     Main()
