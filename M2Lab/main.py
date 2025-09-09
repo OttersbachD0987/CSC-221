@@ -16,19 +16,13 @@ def Main() -> None:
     print("Rotated prices")
     merged = constituents.join(usePrices)
     print("Joined data")
-    flunked = usePrices.transpose()
 
-    bonk: dict[str, float|None]
+    bonk: dict[str, list[float]] = {}
 
-    for col in usePrices:
-        print(col)
-        for row in usePrices.transpose():
-            print(usePrices[col][row])
-            bonk
-    
-    for col in merged:
-        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", col) is not None:
-            print("Exact Match")
+    for row in merged.transpose():
+        for col in usePrices:
+            bonk[row] = bonk.get(row, []) + ([usePrices[col][row]] if row in usePrices[col] and isinstance(usePrices[col][row], float) else [])
+        merged.
 
 
 if __name__ == "__main__":
