@@ -22,8 +22,9 @@ def Main() -> None:
     for row in merged.transpose():
         for col in usePrices:
             bonk[row] = bonk.get(row, []) + ([usePrices[col][row]] if row in usePrices[col] and isinstance(usePrices[col][row], float) else [])
-        merged.
-
+    
+    merged["difference"] = merged.apply(lambda r: bonk[r.name][-2] - bonk[r.name][-1] if len(bonk[r.name]) > 0 else None)
+    print(merged)
 
 if __name__ == "__main__":
     Main()
