@@ -1,5 +1,17 @@
 KEY_COLON:     int = 58
 
+
+KEY_0: int = ord("0")
+KEY_1: int = ord("1")
+KEY_2: int = ord("2")
+KEY_3: int = ord("3")
+KEY_4: int = ord("4")
+KEY_5: int = ord("5")
+KEY_6: int = ord("6")
+KEY_7: int = ord("7")
+KEY_8: int = ord("8")
+KEY_9: int = ord("9")
+
 KEY_a: int = ord("a")
 KEY_b: int = ord("b")
 KEY_c: int = ord("c")
