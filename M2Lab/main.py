@@ -1,5 +1,5 @@
 # Load two files, pivot one, join to the other, augment the result by getting the difference between the two last available prices, and print missing values.
-# 9/11/2025
+# 9/14/2025
 # CSC221 M2Lab– Panda DF
 # Daley Ottersbach
 
@@ -9,27 +9,30 @@ import pandas
 def Main() -> None:
     """Runs the main loop of the program.
     """
-    prices: pandas.DataFrame = pandas.read_csv("SP500_Adjusted_Prices.csv")
-    constituents: pandas.DataFrame = pandas.read_csv("SP500_Constituents.csv", index_col="Symbol")
-    print("Data frames loaded")
-    print(prices)
-    print(constituents)
-    usePrices = prices.pivot(index="Symbol", columns="Date", values="Adjusted_price")
-    print("Rotated prices")
-    print(usePrices)
-    merged = constituents.join(usePrices)
-    print("Joined data")
-    print(merged)
+    try:
+        prices: pandas.DataFrame = pandas.read_csv("SP500_Adjusted_Prices.csv")
+        constituents: pandas.DataFrame = pandas.read_csv("SP500_Constituents.csv", index_col="Symbol")
+        print("Data frames loaded")
+        print(prices)
+        print(constituents)
+        usePrices = prices.pivot(index="Symbol", columns="Date", values="Adjusted_price")
+        print("Rotated prices")
+        print(usePrices)
+        merged = constituents.join(usePrices)
+        print("Joined data")
+        print(merged)
 
-    # I don't like doing it like this.
-    merged = functions.FindDifference(merged, usePrices)
+        # I don't like doing it like this.
+        merged = functions.FindDifference(merged, usePrices)
 
-    print("Added difference column")
-    print(merged)
-    
-    missing = merged[merged.difference.isna()]
-    print("Determined Missing Stocks")
-    print(missing)
+        print("Added difference column")
+        print(merged)
+        
+        missing = merged[merged.difference.isna()]
+        print("Determined Missing Stocks")
+        print(missing)
+    except FileNotFoundError as e:
+        print(f"The file {e.filename} does not exist.")
 
 if __name__ == "__main__":
     Main()
