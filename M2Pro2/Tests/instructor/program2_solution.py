@@ -11,7 +11,7 @@
 
 import csv
 
-from . import file_type
+from .. import file_type
 
 
 def main():

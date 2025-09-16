@@ -3,7 +3,8 @@ import ast
 import tokenize
 import symtable
 import os
-from python_file import PythonFile
+from project.python_file import PythonFile
+from project.project import Project
 from typing import Any
 
 # ===============================
@@ -13,10 +14,13 @@ CRITERIA = {
     "structure": 30,   # % weight for loop/structure
     "output": 50,      # % weight for correct output
     "functions": 10,   # % weight for using functions
-    "pseudocode": 5,     # % weight for comments
+    "pseudocode": 5,   # % weight for comments
     "variables": 5     # % weight for variable usage
 }
 
+# Weak, sad, truly unusable in it's lack of capabilites. This must be fixed post haste.
+# But like... What you want done for comments?
+# Am I supposed to implement my own AST for parsing comments?
 
 # ===============================
 # FUNCTION: Run a Python file
@@ -25,7 +29,7 @@ def RunProgram(a_file: PythonFile) -> tuple[str, str, int]:
     """Run a Python program and return stdout, stderr, and exit code.
     """
     result = subprocess.run(
-        ["python", "student_code.py"],   # program to run
+        ["python", f"{a_file.path}\\{a_file.name}"],   # program to run
         capture_output=True,             # capture what it prints
         text=True                        # result.stderr decode output as text instead of bytes
     )
@@ -197,14 +201,18 @@ def GradeFile(a_solutionFile: PythonFile, a_studentFile: PythonFile) -> tuple[in
 # MAIN EXECUTION
 # ===============================
 if __name__ == "__main__":
-    instructorFile: PythonFile = PythonFile(os.getcwd(), "program2_solution.py")
-    studentFile: PythonFile = PythonFile(os.getcwd(), "program2_stu_correct.py")
-    score, rubric = GradeFile(instructorFile, studentFile)
+
+    instructorProjectDirectory: str = input("Path to instructor project directory: ")
+    studentProjectDirectory:    str = input("Path to student project directory: ")
+
+    instructorProject: Project = Project(f"{os.getcwd()}\\{instructorProjectDirectory}")
+    studentProject:    Project = Project(f"{os.getcwd()}\\{studentProjectDirectory}")
+    #score, rubric = GradeFile(instructorFile, studentFile)
     print("=== Rubric ===")
     print(f"{'Criterion':<20} {'Passed':<8} {'Weight':<6} {'Points':<6} Feedback")
     print("-"*80)
-    for item in rubric:
-        print(f"{item['Criterion']:<20} {str(item['Passed']):<8} {item['Weight']:<6} "
-              f"{item['Points Earned']:<6} {item['Feedback']}")
-    print("\n=== Final Grade ===")
-    print(f"Score: {score}/100 (Breakdown: {CRITERIA})")
+    #for item in rubric:
+    #    print(f"{item['Criterion']:<20} {str(item['Passed']):<8} {item['Weight']:<6} "
+    #          f"{item['Points Earned']:<6} {item['Feedback']}")
+    #print("\n=== Final Grade ===")
+    #print(f"Score: {score}/100 (Breakdown: {CRITERIA})")
