@@ -4,7 +4,6 @@ from util import TryGetCast
 from abc import ABC, abstractmethod
 from .autograder_instance_data import AutograderInstanceData
 
-
 @dataclass
 class CodeTestNode(ABC):
     nodeID: str
