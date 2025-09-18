@@ -1,18 +1,35 @@
 def bunk() -> bool:
     return True
 
-while True:
+if bunk():
     ...
 
-while not False:
+if 1 > 2:
     ...
 
-while 1 == 1:
+if 1 < 2:
     ...
 
-while len("25") > 0:
+if 1 >= 2:
     ...
 
+if 1 <= 2:
+    ...
 
-while bunk():
+if 1 == 2:
+    ...
+
+if 1 != 2:
+    ...
+
+if True:
+    ...
+
+if not True:
+    ...
+
+if eval("True"):
+    ...
+
+if bool(1):
     ...

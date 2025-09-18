@@ -1,5 +1,7 @@
-from .file_type import FileType
-from .python_file import PythonFile
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .file_type import FileType
+    from autograder.project_settings import ProjectSettings
 
 class Project:
     def __init__(self, a_name: str, a_dir: str) -> None:
@@ -7,7 +9,7 @@ class Project:
         self.dir: str = a_dir
         self.files: list[FileType] = util.GetFiles(a_dir)
 
-    def EvaluateImports(self) -> None:
+    def EvaluateImports(self, a_projectSettings: "ProjectSettings") -> None:
         ...
 
 import util

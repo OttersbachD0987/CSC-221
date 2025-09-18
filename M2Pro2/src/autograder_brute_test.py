@@ -5,12 +5,9 @@ import symtable
 import os
 from project.python_file import PythonFile
 from project.project import Project
-from typing import Any
 from autograder.autograder_application import Autograder
-from autograder.autograder_settings import Requirement
-from autograder import code_test_kinds
-
-
+from autograder.project_settings import Requirement
+from autograder import code_test_kinds, code_walker
 
 
 # ===============================
@@ -79,7 +76,7 @@ if __name__ == "__main__":
                     "return_code": {
                         "node_id": "literal",
                         "literalType": "string",
-                        "literalValue": "c"
+                        "literalValue": "[0-9]*"
                     }
                 }   #key: node.ToDict() for key, node in self.arguments.items()
             },
@@ -189,9 +186,11 @@ if __name__ == "__main__":
     grader.instanceData.projects[instructorProjectName] = instructorProject
     grader.instanceData.projects[studentProjectName] = studentProject
 
-    grader.settings.tests["first_assertion"].RunTest(grader.instanceData)
-    grader.settings.tests["second_assertion"].RunTest(grader.instanceData)
-    grader.settings.tests["first_comparison"].RunTest(grader.instanceData)
+    grader.settings.tests["first_assertion"].RunTest(grader)
+    grader.settings.tests["second_assertion"].RunTest(grader)
+    grader.settings.tests["first_comparison"].RunTest(grader)
+
+    
 
     #score, rubric = GradeFile(instructorFile, studentFile)
     print("=== Rubric ===")

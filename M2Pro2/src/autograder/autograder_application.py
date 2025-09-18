@@ -23,6 +23,6 @@ class Autograder:
             with open(a_path, "w") as configurationFile:
                 json.dump(self.settings.ToDict(), configurationFile)
         except PermissionError as e:
-            ...
+            print(f"Error: {e}")
         except IsADirectoryError as e:
-            ...
+            print(f"Error: {e}")

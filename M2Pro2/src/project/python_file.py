@@ -1,13 +1,11 @@
 import ast
 from ast import Module, Import, ImportFrom
-
 import symtable
 from symtable import SymbolTable
-
 import tokenize
 from tokenize import TokenInfo
-
 from .file_type import FileType
+from autograder import code_walker
 
 class PythonFile(FileType):
     def __init__(self, a_path: str, a_name: str):
@@ -40,5 +38,9 @@ class PythonFile(FileType):
                 print(f"Module: {node.module}")
                 for name in node.names:
                     print(f"{name.name} as {name.asname}")
+
+        print(f"---------")
+
+        code_walker.CodeWalker().visit(self.ast)
         
         self.imports = [name for node in ast.walk(self.ast) if isinstance(node, Import) for name in node.names]

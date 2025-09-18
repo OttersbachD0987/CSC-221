@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import ClassVar, Callable, Any, Self
-from util import TryGetCast
+from typing import ClassVar, Callable, Any, Self, TYPE_CHECKING, cast
 from abc import ABC, abstractmethod
-from .autograder_instance_data import AutograderInstanceData
+if TYPE_CHECKING:
+    from .autograder_application import Autograder
 
 @dataclass
 class CodeTestNode(ABC):
@@ -72,7 +72,7 @@ class InvalidTestNode(CodeTestNode):
 
 @dataclass
 class CodeTest:
-    TestTypes: ClassVar[dict[str, Callable[[dict[str, CodeTestNode], AutograderInstanceData], None]]] = {}
+    TestTypes: ClassVar[dict[str, Callable[[dict[str, CodeTestNode], "Autograder"], None]]] = {}
     type: str
     arguments: dict[str, CodeTestNode]
 
@@ -81,7 +81,7 @@ class CodeTest:
         return cls(
             a_data["type"],
             {
-                key: ParseCodeTestNode(argument) for key, argument in a_data.get("arguments", {}).items()
+                key: ParseCodeTestNode(argument) for key, argument in cast(dict[str, dict[str, Any]], a_data.get("arguments", {})).items()
             }
         )
     
@@ -94,10 +94,10 @@ class CodeTest:
         }
     
     @classmethod
-    def RegisterTestType(cls, a_id: str, a_testFunction: Callable[[dict[str, CodeTestNode], AutograderInstanceData], None]) -> None:
+    def RegisterTestType(cls, a_id: str, a_testFunction: Callable[[dict[str, CodeTestNode], "Autograder"], None]) -> None:
         CodeTest.TestTypes[a_id] = a_testFunction
     
-    def RunTest(self, a_grader: AutograderInstanceData):
+    def RunTest(self, a_grader: "Autograder"):
         CodeTest.TestTypes[self.type](self.arguments, a_grader)
 
 

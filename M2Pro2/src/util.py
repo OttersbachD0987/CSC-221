@@ -1,11 +1,12 @@
 import os
 from project.python_file import PythonFile
 from project.directory_file import DirectoryFile
-from project.file_type import FileType
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
+if TYPE_CHECKING:
+    from project.file_type import FileType
 
-def GetFiles(a_dir: str) -> list[FileType]:
-    toReturn: list[FileType] = []
+def GetFiles(a_dir: str) -> list["FileType"]:
+    toReturn: list["FileType"] = []
     for fileDescriptor in os.scandir(a_dir):
         if fileDescriptor.is_dir():
             toReturn.append(DirectoryFile(fileDescriptor.path.removesuffix(fileDescriptor.name).rstrip("\\"), fileDescriptor.name))
@@ -29,3 +30,17 @@ def TryCast[V, R](a_value: V, a_converter: Callable[[V], R], a_default: R) -> R:
         return a_converter(a_value)
     except:
         return a_default
+    
+def intput(a_prompt: str) -> int:
+    try:
+        return int(input(a_prompt))
+    except Exception as e:
+        print(e)
+        return intput(a_prompt)
+    
+def floatput(a_prompt: str) -> float:
+    try:
+        return float(input(a_prompt))
+    except Exception as e:
+        print(e)
+        return floatput(a_prompt)

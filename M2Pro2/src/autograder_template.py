@@ -41,6 +41,7 @@ def RunProgram(a_file: PythonFile) -> tuple[str, str, int]:
     return result.stdout.strip(), result.stderr.strip(), result.returncode
 
 
+
 # ===============================
 # FUNCTION: Check loops / structure
 # ===============================
@@ -205,8 +206,8 @@ if __name__ == "__main__":
     instructorProjectDirectory: str = input("Path to instructor project directory: ")
     studentProjectDirectory:    str = input("Path to student project directory: ")
 
-    instructorProject: Project = Project(f"{os.getcwd()}\\{instructorProjectDirectory}")
-    studentProject:    Project = Project(f"{os.getcwd()}\\{studentProjectDirectory}")
+    instructorProject: Project = Project("a", f"{os.getcwd()}\\{instructorProjectDirectory}")
+    studentProject:    Project = Project("b", f"{os.getcwd()}\\{studentProjectDirectory}")
     #score, rubric = GradeFile(instructorFile, studentFile)
     print("=== Rubric ===")
     print(f"{'Criterion':<20} {'Passed':<8} {'Weight':<6} {'Points':<6} Feedback")
