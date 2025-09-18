@@ -14,7 +14,26 @@ class PythonFile(FileType):
         try:
             with open(f"{a_path}\\{a_name}", "r") as file:
                 self.contents: str = file.read()
-                self.ast: Module = ast.parse(self.contents, a_name)
+                self.errors: list[tuple[str, str]] = []
+                try:
+                    self.ast: Module = ast.parse(self.contents, a_name)
+                    for node in ast.walk(self.ast):
+                        if isinstance(node, Import):
+                            for name in node.names:
+                                print(f"{name.name} as {name.asname}")
+                        elif isinstance(node, ImportFrom):
+                            print(f"Level: {node.level}")
+                            print(f"Module: {node.module}")
+                            for name in node.names:
+                                print(f"{name.name} as {name.asname}")
+
+                    print(f"---------")
+
+                    code_walker.CodeWalker().visit(self.ast)
+                    self.imports = [name for node in ast.walk(self.ast) if isinstance(node, Import) for name in node.names]
+                except SyntaxError as e:
+                    print(f"Syntax error:\n{e}")
+                    self.errors.append(("Syntax", f"{e.lineno}\xA1{e.end_lineno}\xA0{e.offset}\xA1{e.end_offset}\xA0{e.text}"))
                 file.seek(0)
                 self.tokens: list[TokenInfo] = [token for token in tokenize.generate_tokens(file.read)]
                 self.symtable: SymbolTable = symtable.symtable(self.contents, self.name, "exec")
@@ -24,23 +43,3 @@ class PythonFile(FileType):
             print(f"You do not have sufficient permissions to access the file {e.filename}.")
         except IsADirectoryError as e:
             print(f"{e.filename} is not a file, it is a directory.")
-
-        #print(ast.dump(self.ast, include_attributes=True, indent=1))
-        #print(self.tokens)
-        #print(self.symtable.get_symbols())
-        
-        for node in ast.walk(self.ast):
-            if isinstance(node, Import):
-                for name in node.names:
-                    print(f"{name.name} as {name.asname}")
-            elif isinstance(node, ImportFrom):
-                print(f"Level: {node.level}")
-                print(f"Module: {node.module}")
-                for name in node.names:
-                    print(f"{name.name} as {name.asname}")
-
-        print(f"---------")
-
-        code_walker.CodeWalker().visit(self.ast)
-        
-        self.imports = [name for node in ast.walk(self.ast) if isinstance(node, Import) for name in node.names]

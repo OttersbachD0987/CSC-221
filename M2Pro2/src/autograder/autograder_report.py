@@ -8,3 +8,5 @@ class AutograderReport:
 
     def PostLog(self, a_message: str) -> None:
         self.messages.append((time.time_ns(), a_message))
+        
+        

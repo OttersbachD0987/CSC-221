@@ -1,14 +1,13 @@
-from .code_test import CodeTest, CodeTestNode
+from .code_test import CodeTest, CodeTestNode, ProjectTestNode, LiteralTestNode
 from subprocess import Popen, PIPE
 from typing import TYPE_CHECKING
 import re
 
 if TYPE_CHECKING:
     from .autograder_application import Autograder
-    from .code_test import ProjectTestNode, LiteralTestNode
 
 
-def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: Autograder):
+def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder"):
     baseProject:    ProjectTestNode|None = a_arguments["base_project"] if isinstance(a_arguments["base_project"], ProjectTestNode) else None
     testProject:    ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
     stdoutMode:     LiteralTestNode|None = a_arguments["stdout"]       if isinstance(a_arguments["stdout"],       LiteralTestNode) else None
@@ -22,7 +21,7 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: Autograder):
     projectTest = a_app.instanceData.projects[testProject.projectName]
 
     subBase: Popen[str] = Popen(" ".join([
-            "python", f"{projectBase.dir}\\{baseProject.projectEntrypoint}", 
+            "py", f"{projectBase.dir}\\{baseProject.projectEntrypoint}", 
             *[f"\"{node.literalValue}\"" for node in baseProject.projectArguments.nodes.values() if isinstance(node, LiteralTestNode)]]), 
         stdin=PIPE,
         stdout=PIPE,
@@ -33,7 +32,7 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: Autograder):
     stdoutBase, stderrBase = subBase.communicate("\n".join(baseProject.projectInputs))
     
     subTest: Popen[str] = Popen(" ".join([
-            "python", f"{projectTest.dir}\\{testProject.projectEntrypoint}", 
+            "py", f"{projectTest.dir}\\{testProject.projectEntrypoint}", 
             *[f"\"{node.literalValue}\"" for node in testProject.projectArguments.nodes.values() if isinstance(node, LiteralTestNode)]]), 
         stdin=PIPE,
         stdout=PIPE,
@@ -52,7 +51,7 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: Autograder):
     if True:
         print(subBase.returncode == subTest.returncode)
 
-def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: Autograder):
+def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder"):
     testProject:    ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
     stdoutMode:     LiteralTestNode|None = a_arguments["stdout"]       if isinstance(a_arguments["stdout"],       LiteralTestNode) else None
     stderrMode:     LiteralTestNode|None = a_arguments["stderr"]       if isinstance(a_arguments["stderr"],       LiteralTestNode) else None
@@ -64,7 +63,7 @@ def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: Autograder):
     project = a_app.instanceData.projects[testProject.projectName]
 
     sub: Popen[str] = Popen(" ".join([
-            "python", f"{project.dir}\\{testProject.projectEntrypoint}", 
+            "py", f"{project.dir}\\{testProject.projectEntrypoint}", 
             *[f"\"{node.literalValue}\"" for node in testProject.projectArguments.nodes.values() if isinstance(node, LiteralTestNode)]]), 
         stdin=PIPE, 
         stdout=PIPE,
@@ -110,6 +109,10 @@ CodeTest.RegisterTestType("assert_output", AssertOutput)
 # Return Code
 # * Match
 # * Ignore
+# ?Found
+# - Action
+# ?Not Found
+# - Action
 ###
 ## Assert Output
 # Test Project
@@ -124,4 +127,37 @@ CodeTest.RegisterTestType("assert_output", AssertOutput)
 # Return Code
 # * Match (Regex)
 # * Ignore
+# ?Found
+# - Action
+# ?Not Found
+# - Action
+###
+## File Assert Output
+# Test Project
+# - Arguments
+# - Inputs
+# stdout
+# * Match (File)
+# * Ignore
+# stderr
+# * Match (File)
+# * Ignore
+# Return Code
+# * Match (File)
+# * Ignore
+# ?Found
+# - Action
+# ?Not Found
+# - Action
+###
+## Walk AST
+# Test Project
+# - Arguments
+# - Inputs
+# Pattern
+# - Pattern Params
+# ?Found
+# - Action
+# ?Not Found
+# - Action
 ###
