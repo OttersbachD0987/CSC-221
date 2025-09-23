@@ -14,22 +14,30 @@ class CodeTestNode(ABC):
     def ToDict(self) -> dict[str, Any]:
         pass
 
-class ICanReturnBool(CodeTestNode, ABC):
+class ICanReturnAny(CodeTestNode, ABC):
     @abstractmethod
-    def EvaluateBool(self) -> bool:
+    def EvaluateAny(self, a_data: dict[str, Any]) -> Any:
         pass
 
-class ICanReturnStr(CodeTestNode, ABC):
-    ...
+class ICanReturnBool(ICanReturnAny, ABC):
+    @abstractmethod
+    def EvaluateBool(self, a_data: dict[str, Any]) -> bool:
+        pass
 
-class ICanReturnInt(CodeTestNode, ABC):
-    ...
+class ICanReturnStr(ICanReturnAny, ABC):
+    @abstractmethod
+    def EvaluateStr(self, a_data: dict[str, Any]) -> str:
+        pass
 
-class ICanReturnFloat(CodeTestNode, ABC):
-    ...
+class ICanReturnInt(ICanReturnAny, ABC):
+    @abstractmethod
+    def EvaluateInt(self, a_data: dict[str, Any]) -> int:
+        pass
 
-class ICanReturnAny(ICanReturnBool, ICanReturnStr, ICanReturnInt, ICanReturnFloat, ABC):
-    ...
+class ICanReturnFloat(ICanReturnAny, ABC):
+    @abstractmethod
+    def EvaluateFloat(self, a_data: dict[str, Any]) -> float:
+        pass
 
 @dataclass
 class ListTestNode(CodeTestNode):
@@ -40,7 +48,7 @@ class ListTestNode(CodeTestNode):
             "node_id": self.nodeID,
             "nodes": [node.ToDict() for node in self.nodes]
         }
-    
+
 @dataclass
 class DictionaryTestNode(CodeTestNode):
     nodes: dict[str, CodeTestNode]
@@ -52,16 +60,43 @@ class DictionaryTestNode(CodeTestNode):
         }
 
 @dataclass
-class LiteralTestNode(ICanReturnAny):
+class LiteralTestNode(ICanReturnBool, ICanReturnStr, ICanReturnInt, ICanReturnFloat):
     literalType: str
     literalValue: Any
-
+    
     def ToDict(self) -> dict[str, Any]:
         return {
             "node_id": self.nodeID,
             "literal_type": self.literalType,
             "literal_value": self.literalValue
         }
+    
+    def EvaluateBool(self, a_data: dict[str, Any]) -> bool:
+        return self.literalValue if self.literalType == "boolean" else False
+
+    def EvaluateStr(self, a_data: dict[str, Any]) -> str:
+        return self.literalValue if self.literalType == "string" else ""
+    
+    def EvaluateInt(self, a_data: dict[str, Any]) -> int:
+        return self.literalValue if self.literalType == "int" else -1
+    
+    def EvaluateFloat(self, a_data: dict[str, Any]) -> float:
+        return self.literalValue if self.literalType == "float" else 0
+    
+    def EvaluateAny(self, a_data: dict[str, Any]) -> Any:
+        return self.literalType
+
+@dataclass
+class ASTNodeTestNode(ICanReturnAny, ICanReturnBool, ICanReturnStr, ICanReturnInt, ICanReturnFloat):
+    toCall: str
+    
+    def ToDict(self) -> dict[str, str]:
+        return {
+            "to_call": "toCall"
+        }
+    
+    def EvaluateBool(self, a_data: dict[str, Any]) -> bool:
+        return eval(self.toCall)
 
 @dataclass
 class ProjectTestNode(CodeTestNode):
@@ -91,9 +126,9 @@ class InvalidTestNode(CodeTestNode):
     
 @dataclass
 class ComparisonTestNode(ICanReturnBool):
-    left: ICanReturnBool
+    left: ICanReturnAny
     operator: str
-    right: ICanReturnBool
+    right: ICanReturnAny
 
     def ToDict(self) -> dict[str, Any]:
         return {
@@ -103,31 +138,36 @@ class ComparisonTestNode(ICanReturnBool):
             "right": self.right.ToDict()
         }
     
-    def EvaluateBool(self) -> bool:
+    def EvaluateBool(self, a_data: dict[str, Any]) -> bool:
+        left: Any = self.left.EvaluateAny(a_data)
+        right: Any = self.right.EvaluateAny(a_data)
         match self.operator:
             case "GTE":
-                ...
+                return left >= right
             case "GT":
-                ...
+                return left > right
             case "LTE":
-                ...
+                return left <= right
             case "LT":
-                ...
+                return left < right
             case "EQ":
-                ...
+                return left == right
             case "NEQ":
-                ...
+                return left != right
             case "AND":
-                ...
+                return left and right
             case "OR":
-                ...
+                return left or right
             case "XOR":
-                ...
+                return (left or right) and (left != right)
             case "NAND":
-                ...
+                return not (left and right)
             case "NOR":
-                ...
+                return not (left or right)
         return False
+    
+    def EvaluateAny(self, a_data: dict[str, Any]):
+        return self.EvaluateBool(a_data)
 
 #region AST Related Nodes
 @dataclass
@@ -174,14 +214,16 @@ def ParseCodeTestNode(a_node: dict[str, Any]) -> CodeTestNode:
     match a_node:
         case {"node_id": nodeID, "literal_type": literalType, "literal_value": literalValue} if nodeID == "literal":
             return LiteralTestNode(nodeID, literalType, literalValue)
+        case {"node_id": nodeID, "to_call": toCall} if nodeID == "ast_node":
+            return ASTNodeTestNode(nodeID, toCall)
         case {"node_id": nodeID, "nodes": nodes} if nodeID == "list":
             return ListTestNode(nodeID, [ParseCodeTestNode(node) for node in nodes])
         case {"node_id": nodeID, "nodes": nodes} if nodeID == "dictionary" and isinstance(nodes, dict):
             return DictionaryTestNode(nodeID, {key: ParseCodeTestNode(node) for key, node in nodes.items()})
         case {"node_id": nodeID, "left": left, "operator": operator, "right": right} if nodeID == "comparison":
-            leftParsed:  CodeTestNode|ICanReturnBool = ParseCodeTestNode(left)
-            rightParsed: CodeTestNode|ICanReturnBool = ParseCodeTestNode(right)
-            if isinstance(leftParsed, ICanReturnBool) and isinstance(rightParsed, ICanReturnBool):
+            leftParsed:  CodeTestNode|ICanReturnAny = ParseCodeTestNode(left)
+            rightParsed: CodeTestNode|ICanReturnAny = ParseCodeTestNode(right)
+            if isinstance(leftParsed, ICanReturnAny) and isinstance(rightParsed, ICanReturnAny):
                 return ComparisonTestNode(nodeID, leftParsed, operator, rightParsed)
         case {"node_id": nodeID, "node_type": nodeType, "test": test} if nodeID == "ast_walk":
             testParsed: CodeTestNode|ICanReturnBool = ParseCodeTestNode(test)
@@ -193,13 +235,9 @@ def ParseCodeTestNode(a_node: dict[str, Any]) -> CodeTestNode:
                 return ProjectTestNode(nodeID, projectName, projectEntrypoint, parsed, projectInputs)
     return InvalidTestNode("invalid", a_node)
 
-def EvaluateCodeTestNode(a_node: ICanReturnBool) -> bool:
-    return a_node.EvaluateBool()
+def EvaluateCodeTestNode(a_node: ICanReturnAny, a_data: dict[str, Any]) -> Any:
+    return a_node.EvaluateAny(a_data)
         
 
 def ExecuteCodeTestNode(a_node: CodeTestNode) -> None:
     ...
-
-def EvaluateCodeTestNode(a_node: CodeTestNode) -> Any:
-    if isinstance():
-        ...
