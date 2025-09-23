@@ -145,7 +145,7 @@ class ASTWalkTestNode(CodeTestNode):
 
 @dataclass
 class CodeTest:
-    TestTypes: ClassVar[dict[str, Callable[[dict[str, CodeTestNode], "Autograder"], float]]] = {}
+    TestTypes: ClassVar[dict[str, Callable[[dict[str, CodeTestNode], "Autograder"], tuple[float, bool]]]] = {}
     type: str
     arguments: dict[str, CodeTestNode]
 
@@ -163,7 +163,7 @@ class CodeTest:
         }
     
     @classmethod
-    def RegisterTestType(cls, a_id: str, a_testFunction: Callable[[dict[str, CodeTestNode], "Autograder"], float]) -> None:
+    def RegisterTestType(cls, a_id: str, a_testFunction: Callable[[dict[str, CodeTestNode], "Autograder"], tuple[float, bool]]) -> None:
         CodeTest.TestTypes[a_id] = a_testFunction
     
     def RunTest(self, a_grader: "Autograder"):

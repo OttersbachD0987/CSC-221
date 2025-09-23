@@ -9,6 +9,10 @@ class FunctionPreWalker(NodeVisitor):
     def visit_FunctionDef(self, node: FunctionDef) -> Any:
         return
 
+class ASTWalker(NodeVisitor):
+    def __init__(self, a_):
+        self.a = a_
+
 class CodeWalker(NodeVisitor):
     def __init__(self) -> None:
         ...

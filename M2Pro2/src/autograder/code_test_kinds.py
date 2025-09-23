@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from .autograder_application import Autograder
 
 
-def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> float:
+def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
     VALID_OUTPUTS: tuple[str, str, str] = ("Match", "No Match", "Ignore")
     baseProject:    ProjectTestNode|None = a_arguments["base_project"] if isinstance(a_arguments["base_project"], ProjectTestNode) else None
     testProject:    ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
@@ -19,7 +19,7 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> 
     grade: int = 0
 
     if testProject is None or baseProject is None:
-        return grade
+        return grade, False
     
     projectBase = a_app.instanceData.projects[baseProject.projectName]
     projectTest = a_app.instanceData.projects[testProject.projectName]
@@ -82,10 +82,10 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> 
             if subBase.returncode != subTest.returncode:
                 grade += 1
     
-    return grade / 3.0
+    return grade / 3.0, grade == 3
 
 
-def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> float:
+def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
     testProject: ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
 
     stdoutMode:     Pattern = re.compile(a_arguments["stdout"].literalValue      if isinstance(a_arguments["stdout"], LiteralTestNode)      and a_arguments["stdout"].literalType      == "string" else ".*")
@@ -95,7 +95,7 @@ def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> f
     grade: int = 0
 
     if testProject is None:
-        return grade
+        return grade, False
     
     project = a_app.instanceData.projects[testProject.projectName]
 
@@ -134,9 +134,21 @@ def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> f
     else:
         ...
     
-    return grade / 3.0
+    return grade / 3.0, grade == 3
+
+def WalkAST(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
+    testProject: ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
+    
+    maxGrade: int = 0
+    grade: int = 0
+
+    if testProject is None:
+        return grade, False
     
     
+    
+    return 1, True
+
 CodeTest.RegisterTestType("compare_output", CompareOutput)
 CodeTest.RegisterTestType("assert_output", AssertOutput)
 
