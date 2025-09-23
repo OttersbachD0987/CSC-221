@@ -1,21 +1,25 @@
-from .code_test import CodeTest, CodeTestNode, ProjectTestNode, LiteralTestNode
+from .code_test import CodeTest, CodeTestNode, ProjectTestNode, LiteralTestNode, ExecuteCodeTestNode
 from subprocess import Popen, PIPE
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
+from re import Pattern
 import re
 
 if TYPE_CHECKING:
     from .autograder_application import Autograder
 
 
-def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder"):
+def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> float:
+    VALID_OUTPUTS: tuple[str, str, str] = ("Match", "No Match", "Ignore")
     baseProject:    ProjectTestNode|None = a_arguments["base_project"] if isinstance(a_arguments["base_project"], ProjectTestNode) else None
     testProject:    ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
-    stdoutMode:     LiteralTestNode|None = a_arguments["stdout"]       if isinstance(a_arguments["stdout"],       LiteralTestNode) else None
-    stderrMode:     LiteralTestNode|None = a_arguments["stderr"]       if isinstance(a_arguments["stderr"],       LiteralTestNode) else None
-    returnCodeMode: LiteralTestNode|None = a_arguments["return_code"]  if isinstance(a_arguments["return_code"],  LiteralTestNode) else None
+    stdoutMode:     str = a_arguments["stdout"].literalValue      if isinstance(a_arguments["stdout"], LiteralTestNode)      and a_arguments["stdout"].literalType      == "string" and a_arguments["stdout"].literalValue      in VALID_OUTPUTS else "Match"
+    stderrMode:     str = a_arguments["stderr"].literalValue      if isinstance(a_arguments["stderr"], LiteralTestNode)      and a_arguments["stderr"].literalType      == "string" and a_arguments["stderr"].literalValue      in VALID_OUTPUTS else "Match"
+    returnCodeMode: str = a_arguments["return_code"].literalValue if isinstance(a_arguments["return_code"], LiteralTestNode) and a_arguments["return_code"].literalType == "string" and a_arguments["return_code"].literalValue in VALID_OUTPUTS else "Match"
+
+    grade: int = 0
 
     if testProject is None or baseProject is None:
-        return
+        return grade
     
     projectBase = a_app.instanceData.projects[baseProject.projectName]
     projectTest = a_app.instanceData.projects[testProject.projectName]
@@ -42,23 +46,56 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder"):
 
     stdoutTest, stderrTest = subTest.communicate("\n".join(testProject.projectInputs))
 
-    if True:
-        print(stdoutBase == stdoutTest)
-    
-    if True:
-        print(stderrBase == stderrTest)
-    
-    if True:
-        print(subBase.returncode == subTest.returncode)
+    match stdoutMode:
+        case "Ignore":
+            grade += 1
+        case "Match":
+            print(stdoutBase == stdoutTest)
+            if stdoutBase == stdoutTest:
+                grade += 1
+        case "No Match":
+            print(stdoutBase != stdoutTest)
+            if stdoutBase != stdoutTest:
+                grade += 1
 
-def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder"):
-    testProject:    ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
-    stdoutMode:     LiteralTestNode|None = a_arguments["stdout"]       if isinstance(a_arguments["stdout"],       LiteralTestNode) else None
-    stderrMode:     LiteralTestNode|None = a_arguments["stderr"]       if isinstance(a_arguments["stderr"],       LiteralTestNode) else None
-    returnCodeMode: LiteralTestNode|None = a_arguments["return_code"]  if isinstance(a_arguments["return_code"],  LiteralTestNode) else None
+    match stderrMode:
+        case "Ignore":
+            grade += 1
+        case "Match":
+            print(stderrBase == stderrTest)
+            if stderrBase == stderrTest:
+                grade += 1
+        case "No Match":
+            print(stderrBase != stderrTest)
+            if stderrBase != stderrTest:
+                grade += 1
+
+    match returnCodeMode:
+        case "Ignore":
+            grade += 1
+        case "Match":
+            print(subBase.returncode == subTest.returncode)
+            if subBase.returncode == subTest.returncode:
+                grade += 1
+        case "No Match":
+            print(subBase.returncode != subTest.returncode)
+            if subBase.returncode != subTest.returncode:
+                grade += 1
+    
+    return grade / 3.0
+
+
+def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> float:
+    testProject: ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
+
+    stdoutMode:     Pattern = re.compile(a_arguments["stdout"].literalValue      if isinstance(a_arguments["stdout"], LiteralTestNode)      and a_arguments["stdout"].literalType      == "string" else ".*")
+    stderrMode:     Pattern = re.compile(a_arguments["stderr"].literalValue      if isinstance(a_arguments["stderr"], LiteralTestNode)      and a_arguments["stderr"].literalType      == "string" else ".*")
+    returnCodeMode: Pattern = re.compile(a_arguments["return_code"].literalValue if isinstance(a_arguments["return_code"], LiteralTestNode) and a_arguments["return_code"].literalType == "string" else ".*")
+
+    grade: int = 0
 
     if testProject is None:
-        return
+        return grade
     
     project = a_app.instanceData.projects[testProject.projectName]
 
@@ -78,15 +115,26 @@ def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder"):
     if sub.stderr != None:
         print(f"stderr:\n {stderr.strip()}\n")
 
-    stdoutRegex     = re.compile(stdoutMode.literalValue     if stdoutMode     is not None else ".*")
-    stderrRegex     = re.compile(stderrMode.literalValue     if stderrMode     is not None else ".*")
-    returnCodeRegex = re.compile(returnCodeMode.literalValue if returnCodeMode is not None else ".*")
-
-    print(F"{stdoutRegex.match(stdout.strip())}")
-    print(F"{stderrRegex.match(stderr.strip())}")
-    print(F"{returnCodeRegex.match(f"{sub.returncode}")}")
+    print(F"{stdoutMode.match(stdout.strip())}")
+    print(F"{stderrMode.match(stderr.strip())}")
+    print(F"{returnCodeMode.match(f"{sub.returncode}")}")
 
     print(f"Return Code: {sub.returncode} : {2}")
+
+    if stdoutMode.match(stdout.strip()) is not None:
+        grade += 1
+    if stderrMode.match(stderr.strip()) is not None:
+        grade += 1
+    if returnCodeMode.match(f"{sub.returncode}") is not None:
+        grade += 1
+    
+
+    if grade == 3:
+        ExecuteCodeTestNode()
+    else:
+        ...
+    
+    return grade / 3.0
     
     
 CodeTest.RegisterTestType("compare_output", CompareOutput)
@@ -154,10 +202,14 @@ CodeTest.RegisterTestType("assert_output", AssertOutput)
 # Test Project
 # - Arguments
 # - Inputs
-# Pattern
+# Patterns
 # - Pattern Params
 # ?Found
 # - Action
 # ?Not Found
 # - Action
 ###
+
+## Pattern
+# Type
+# Test

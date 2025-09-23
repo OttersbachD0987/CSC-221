@@ -19,6 +19,7 @@ class Screen(IntEnum):
     MANAGE_PRESETS = auto()
     EDIT_PROJECT = auto()
     EDIT_TEST = auto()
+    EDIT_CRITERIA = auto()
     A = auto()
 
 @dataclass
@@ -72,6 +73,17 @@ def HandleInput(a_app: AppConfigState):
                         del a_app.grader.instanceData.projects[name]
                 case 5:
                     a_app.screen = Screen.MAIN
+        case Screen.MANAGE_CRITERIA:
+            # 1) List Criteria
+            # 2) Add Criteria
+            # 3) Edit Criteria
+            # 4) Remove Criteria
+            # 5) Back
+            match intput("Options:\n1) List Critera\n2) Add Criteria\n3) Edit Criteria\n4) Remove Criteria\n5) Back\nChoice: "):
+                case 1:
+                    ...
+                case 5:
+                    a_app.screen = Screen.MAIN
         case Screen.MANAGE_TESTS:
             # 1) List Tests
             # 2) Add Test
@@ -110,6 +122,36 @@ def HandleInput(a_app: AppConfigState):
                         a_app.data["project_name"] = name
                 case 2:
                     a_app.screen = Screen.MANAGE_PROJECTS
+                    del a_app.data["project_name"]
+        case Screen.EDIT_TEST:
+            # 1) Rename
+            # 2) Back
+            match intput("Options:\n1) Rename\n2) Back\nChoice: "):
+                case 1:
+                    name: str = input("New name of the Test: ")
+                    if name in a_app.grader.settings.tests:
+                        print(f"{name} is already a used name.")
+                    else:
+                        a_app.grader.settings.tests[name] = a_app.grader.settings.tests[a_app.data["test_name"]]
+                        del a_app.grader.settings.tests[a_app.data["test_name"]]
+                        a_app.data["test_name"] = name
+                case 2:
+                    a_app.screen = Screen.MANAGE_TESTS
+                    del a_app.data["test_name"]
+        case Screen.EDIT_CRITERIA:
+            # 1) Rename
+            # 2) Back
+            match intput("Options:\n1) Rename\n2) Back\nChoice: "):
+                case 1:
+                    name: str = input("New name of the project: ")
+                    if name in a_app.grader.instanceData.projects:
+                        print(f"{name} is already a used name.")
+                    else:
+                        a_app.grader.instanceData.projects[name] = a_app.grader.instanceData.projects[a_app.data["project_name"]]
+                        del a_app.grader.instanceData.projects[a_app.data["project_name"]]
+                        a_app.data["project_name"] = name
+                case 2:
+                    a_app.screen = Screen.MANAGE_CRITERIA
                     del a_app.data["project_name"]
 
 
