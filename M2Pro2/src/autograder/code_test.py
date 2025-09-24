@@ -14,6 +14,11 @@ class CodeTestNode(ABC):
     def ToDict(self) -> dict[str, Any]:
         pass
 
+class IExecutable(CodeTestNode, ABC):
+    @abstractmethod
+    def Execute(self, a_data: dict[str, Any]) -> None:
+        pass
+
 class ICanReturnAny(CodeTestNode, ABC):
     @abstractmethod
     def EvaluateAny(self, a_data: dict[str, Any]) -> Any:
@@ -87,15 +92,28 @@ class LiteralTestNode(ICanReturnBool, ICanReturnStr, ICanReturnInt, ICanReturnFl
         return self.literalType
 
 @dataclass
-class ASTNodeTestNode(ICanReturnAny, ICanReturnBool, ICanReturnStr, ICanReturnInt, ICanReturnFloat):
+class ASTNodeTestNode(ICanReturnBool, ICanReturnStr, ICanReturnInt, ICanReturnFloat):
     toCall: str
     
     def ToDict(self) -> dict[str, str]:
         return {
+            "node_id": self.nodeID,
             "to_call": "toCall"
         }
     
     def EvaluateBool(self, a_data: dict[str, Any]) -> bool:
+        return eval(self.toCall)
+
+    def EvaluateStr(self, a_data: dict[str, Any]) -> str:
+        return eval(self.toCall)
+    
+    def EvaluateInt(self, a_data: dict[str, Any]) -> int:
+        return eval(self.toCall)
+    
+    def EvaluateFloat(self, a_data: dict[str, Any]) -> float:
+        return eval(self.toCall)
+    
+    def EvaluateAny(self, a_data: dict[str, Any]) -> Any:
         return eval(self.toCall)
 
 @dataclass
@@ -183,6 +201,35 @@ class ASTWalkTestNode(CodeTestNode):
         }
 #endregion
 
+#region Execute
+@dataclass
+class PostMessageTestNode(IExecutable):
+    nodeMessage: str
+
+    def ToDict(self) -> dict[str, str]:
+        return {
+            "node_id": self.nodeID,
+            "node_message": self.nodeMessage
+        }
+
+    def Execute(self, a_data: dict[str, Any]) -> None:
+        cast("Autograder", a_data["autograder"]).instanceData.report.PostLog(self.nodeMessage.format(a_data))
+
+@dataclass
+class BlockTestNode(IExecutable):
+    nodes: list[IExecutable]
+
+    def ToDict(self) -> dict[str, Any]:
+        return {
+            "node_id": self.nodeID,
+            "nodes": [node.ToDict() for node in self.nodes]
+        }
+    
+    def Execute(self, a_data: dict[str, Any]) -> None:
+        for node in self.nodes:
+            node.Execute(a_data)
+#endregion
+
 @dataclass
 class CodeTest:
     TestTypes: ClassVar[dict[str, Callable[[dict[str, CodeTestNode], "Autograder"], tuple[float, bool]]]] = {}
@@ -218,6 +265,10 @@ def ParseCodeTestNode(a_node: dict[str, Any]) -> CodeTestNode:
             return ASTNodeTestNode(nodeID, toCall)
         case {"node_id": nodeID, "nodes": nodes} if nodeID == "list":
             return ListTestNode(nodeID, [ParseCodeTestNode(node) for node in nodes])
+        case {"node_id": nodeID, "nodes": nodes} if nodeID == "block":
+            return BlockTestNode(nodeID, [cast(IExecutable, ParseCodeTestNode(node)) for node in nodes if isinstance(ParseCodeTestNode(node), IExecutable)])
+        case {"node_id": nodeID, "node_message": nodeMessage} if nodeID == "post_message":
+            return PostMessageTestNode(nodeID, nodeMessage)
         case {"node_id": nodeID, "nodes": nodes} if nodeID == "dictionary" and isinstance(nodes, dict):
             return DictionaryTestNode(nodeID, {key: ParseCodeTestNode(node) for key, node in nodes.items()})
         case {"node_id": nodeID, "left": left, "operator": operator, "right": right} if nodeID == "comparison":
@@ -238,6 +289,5 @@ def ParseCodeTestNode(a_node: dict[str, Any]) -> CodeTestNode:
 def EvaluateCodeTestNode(a_node: ICanReturnAny, a_data: dict[str, Any]) -> Any:
     return a_node.EvaluateAny(a_data)
         
-
-def ExecuteCodeTestNode(a_node: CodeTestNode) -> None:
-    ...
+def ExecuteCodeTestNode(a_node: IExecutable, a_data: dict[str, Any]) -> None:
+    a_node.Execute(a_data)

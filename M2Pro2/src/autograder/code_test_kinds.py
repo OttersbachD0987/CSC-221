@@ -128,16 +128,11 @@ def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> t
     if returnCodeMode.match(f"{sub.returncode}") is not None:
         grade += 1
     
-
-    if grade == 3:
-        ExecuteCodeTestNode()
-    else:
-        ...
-    
     return grade / 3.0, grade == 3
 
 def WalkAST(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
     testProject: ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
+    
     
     maxGrade: int = 0
     grade: int = 0
