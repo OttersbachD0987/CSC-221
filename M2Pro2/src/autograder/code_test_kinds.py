@@ -7,7 +7,6 @@ import re
 if TYPE_CHECKING:
     from .autograder_application import Autograder
 
-
 def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
     VALID_OUTPUTS: tuple[str, str, str] = ("Match", "No Match", "Ignore")
     baseProject:    ProjectTestNode|None = a_arguments["base_project"] if isinstance(a_arguments["base_project"], ProjectTestNode) else None
@@ -84,7 +83,6 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> 
     
     return grade / 3.0, grade == 3
 
-
 def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
     testProject: ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
 
@@ -140,13 +138,12 @@ def WalkAST(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[
     if testProject is None:
         return grade, False
     
-    
-    
     return 1, True
 
 CodeTest.RegisterTestType("compare_output", CompareOutput)
 CodeTest.RegisterTestType("assert_output", AssertOutput)
 
+#region Outline
 ###
 ## Compare Output
 # Baseline Project
@@ -220,3 +217,4 @@ CodeTest.RegisterTestType("assert_output", AssertOutput)
 ## Pattern
 # Type
 # Test
+#endregion

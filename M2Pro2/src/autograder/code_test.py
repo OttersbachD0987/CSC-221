@@ -4,8 +4,6 @@ from abc import ABC, abstractmethod
 if TYPE_CHECKING:
     from .autograder_application import Autograder
 
-
-
 @dataclass
 class CodeTestNode(ABC):
     nodeID: str
@@ -255,7 +253,6 @@ class CodeTest:
     
     def RunTest(self, a_grader: "Autograder"):
         CodeTest.TestTypes[self.type](self.arguments, a_grader)
-
 
 def ParseCodeTestNode(a_node: dict[str, Any]) -> CodeTestNode:
     match a_node:

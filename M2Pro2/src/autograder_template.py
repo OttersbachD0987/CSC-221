@@ -19,8 +19,6 @@ CRITERIA = {
 }
 
 # Weak, sad, truly unusable in it's lack of capabilites. This must be fixed post haste.
-# But like... What you want done for comments?
-# Am I supposed to implement my own AST for parsing comments?
 
 # ===============================
 # FUNCTION: Run a Python file
