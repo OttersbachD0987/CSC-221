@@ -1,7 +1,13 @@
 import ast
+import re
 from ast import NodeVisitor, While, Constant, Compare, expr, Call, UnaryOp, Not, Gt, GtE, Lt, LtE, Eq, NotEq, FunctionDef, ImportFrom, Name, Load, Set, Del, AST, Add, alias, And, AnnAssign, arg, arguments, Assert, Assign, AsyncFor, AsyncFunctionDef, AsyncWith, Attribute, AugAssign, Await, BinOp, BitAnd, BitOr, BitXor, BoolOp, boolop, Break, ClassDef, cmpop, comprehension, Continue, Delete, Dict, DictComp, Div, ExceptHandler, excepthandler, Expr, expr_context, Expression, FloorDiv, For, FormattedValue, FunctionType, GeneratorExp, Global, If, IfExp, Import, In, Interactive, Invert, Is, IsNot, JoinedStr, keyword, Lambda, List, ListComp, LShift, Match, match_case, MatchAs, MatchClass, MatchMapping, MatchOr, MatchSequence, MatchSingleton, MatchStar, MatchValue, MatMult, Mod, mod, Module, Mult, NamedExpr, NodeTransformer, Nonlocal, NotIn, operator, Or, ParamSpec, Pass, pattern, Pow, Raise, Return, RShift, SetComp, Slice, Starred, stmt, Store, Sub, Subscript, Try, TryStar, Tuple, type_ignore, type_param, TypeAlias, TypeIgnore, TypeVar, TypeVarTuple, UAdd, unaryop, USub, With, withitem, Yield, YieldFrom
-from typing import Any, cast
+from typing import Any, cast, TYPE_CHECKING
 from enum import StrEnum, auto
+from project_settings import ProjectSettings, Requirement
+from dataclasses import dataclass
+
+if TYPE_CHECKING:
+    from project.project import Project
 
 class ASTNodeType(StrEnum):
     WHILE                    = auto()
@@ -124,34 +130,47 @@ class ASTNodeType(StrEnum):
     YIELD_FROM               = auto()
     
 
-class ASTPattern:
-    def __init__(self, a_nodeType: str) -> None:
-        self.nodeType: ASTNodeType = ASTNodeType(a_nodeType)
+def IsTrue(a_node: expr, a_default: bool = False) -> bool:
+    try:
+        if isinstance(a_node, UnaryOp) and isinstance(a_node.op, Not):
+            return not IsTrue(a_node.operand, a_default)
+        else:
+            return ast.literal_eval(a_node)
+    except ValueError as e:
+        print(e)
+    return a_default
 
-class FunctionPreWalker(NodeVisitor):
-    def __init__(self) -> None:
-        ...
-    
-    def visit_FunctionDef(self, node: FunctionDef) -> Any:
-        return
+class ASTPattern:
+    def __init__(self, a_nodeType: str, a_comparisonData: dict[str, Any]|None = None) -> None:
+        self.nodeType: ASTNodeType = ASTNodeType(a_nodeType)
+        self.a_comparisonData: dict[str, Any] = {} if a_comparisonData is None else a_comparisonData
 
 class ASTWalker(NodeVisitor):
     def __init__(self, a_pattern: ASTPattern):
         self.pattern: ASTPattern = a_pattern
     
-    def visit(self, node: AST) -> Any:
-        match self.pattern.nodeType:
-            case ASTNodeType.WHILE: 
+    def generic_visit(self, node: AST) -> int:
+        return self.visiting(node, self.pattern)
+    
+    def visiting(self, node: AST, a_pattern: ASTPattern) -> int:
+        instances: int = 0
+        match a_pattern.nodeType:
+            case ASTNodeType.WHILE:
                 if isinstance(node, While):
-                    try:
-                        if isinstance(node.test, UnaryOp) and isinstance(node.test.op, Not) and ast.literal_eval(node.test.operand) != True:
-                            ...
-                        elif ast.literal_eval(node.test) == True:
-                            ...
-                    except ValueError as e:
-                        print(e)
+                    match a_pattern.a_comparisonData["match_kind"]:
+                        case "test_pattern":
+                            return self.visiting(node, a_pattern.a_comparisonData["test_pattern"])
+                        case _:
+                            return 1
             case ASTNodeType.CONSTANT: 
-                ...
+                if isinstance(node, Constant):
+                    match a_pattern.a_comparisonData["match_kind"]:
+                        case "regex":
+                            return 1 if re.search(a_pattern.a_comparisonData.get("kind_match", ".*"), node.kind) != None and re.search(a_pattern.a_comparisonData.get("value_match", ".*"), str(node.value)) != None else 0
+                        case "is_true":
+                            return 1 if IsTrue(node, a_pattern.a_comparisonData.get("default_val", False)) == a_pattern.a_comparisonData.get("value", True) else 0
+                        case _:
+                            return 1
             case ASTNodeType.COMPARE: 
                 ...
             case ASTNodeType.CALL: 
@@ -225,7 +244,8 @@ class ASTWalker(NodeVisitor):
             case ASTNodeType.BOOL_OP: 
                 ...
             case ASTNodeType.BREAK: 
-                ...
+                if isinstance(node, Break):
+                    return 1
             case ASTNodeType.CLASS_DEF: 
                 ...
             case ASTNodeType.CMPOP: 
@@ -233,7 +253,8 @@ class ASTWalker(NodeVisitor):
             case ASTNodeType.COMPREHENSION: 
                 ...
             case ASTNodeType.CONTINUE: 
-                ...
+                if isinstance(node, Continue):
+                    return 1
             case ASTNodeType.DELETE: 
                 ...
             case ASTNodeType.DICT: 
@@ -385,15 +406,26 @@ class ASTWalker(NodeVisitor):
             case ASTNodeType.YIELD_FROM: 
                 ...
 
+@dataclass
+class ImportData:
+    local: bool
+    name: str
+
 class CodeWalker(NodeVisitor):
-    def __init__(self) -> None:
-        ...
+    def __init__(self, a_project: "Project", a_projectSettings: ProjectSettings) -> None:
+        self.project: "Project" = a_project
+        self.filenames = [file.name for file in a_project.files]
+        self.projectSettings: ProjectSettings = a_projectSettings
+        self.imports: set[ImportData] = set()
     
     def visit_FunctionDef(self, node: FunctionDef) -> Any:
         return
+    
+    def visit_Import(self, node: Import) -> Any:
+        self.imports.update([ImportData(name in self.filenames, name) for name in node.names])
 
     def visit_ImportFrom(self, node: ImportFrom) -> Any:
-        return
+        self.imports.update([ImportData(name in self.filenames, name) for name in node.names])
     
     def visit_While(self, node: While) -> Any:
         print(ast.dump(node.test, include_attributes=True, indent=2))
