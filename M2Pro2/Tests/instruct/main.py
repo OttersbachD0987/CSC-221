@@ -19,4 +19,10 @@ print(b + a)
 
 print(" V  ")
 
-raise TabError()
+x = False
+
+while x:
+    ...
+
+while True:
+    break

@@ -7,9 +7,10 @@ class Project:
     def __init__(self, a_name: str, a_dir: str) -> None:
         self.name: str = a_name
         self.dir: str = a_dir
-        self.files: list[FileType] = util.GetFiles(a_dir)
+        self.files: list[FileType] = util.getFiles(a_dir)
 
-    def EvaluateImports(self, a_projectSettings: "ProjectSettings") -> None:
+    # BROKEN
+    def evaluateImports(self, a_projectSettings: "ProjectSettings") -> None:
         ...
 
 import util

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from enum import IntEnum, auto
+from enum import StrEnum, auto
 
-class ModifierType(IntEnum):
+class ModifierType(StrEnum):
     ADDITION = auto()
     MULTIPLY = auto()
     OVERRIDE = auto()
@@ -12,3 +12,5 @@ class AutograderModifier:
     criterion: str
     modifierType: ModifierType
     modifierValue: float
+    maxValue: float
+    passes: bool

@@ -1,13 +1,17 @@
-from .code_test import CodeTest, CodeTestNode, ProjectTestNode, LiteralTestNode, ExecuteCodeTestNode
+from .code_test import CodeTest, CodeTestNode, ProjectTestNode, LiteralTestNode, executeCodeTestNode, ASTWalkTestNode, ASTPatternTestNode
 from subprocess import Popen, PIPE
 from typing import TYPE_CHECKING, cast
 from re import Pattern
+from .code_walker import ASTWalker
 import re
 
 if TYPE_CHECKING:
     from .autograder_application import Autograder
+    from project.python_file import PythonFile
 
-def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
+def compareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
+    """
+    """
     VALID_OUTPUTS: tuple[str, str, str] = ("Match", "No Match", "Ignore")
     baseProject:    ProjectTestNode|None = a_arguments["base_project"] if isinstance(a_arguments["base_project"], ProjectTestNode) else None
     testProject:    ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
@@ -32,7 +36,7 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> 
         cwd=projectBase.dir, 
         text=True)
 
-    stdoutBase, stderrBase = subBase.communicate("\n".join(baseProject.projectInputs))
+    stdoutBase, stderrBase = subBase.communicate("\n".join(baseProject.projectInputs), timeout=10.0)
     
     subTest: Popen[str] = Popen(" ".join([
             "py", f"{projectTest.dir}\\{testProject.projectEntrypoint}", 
@@ -43,17 +47,17 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> 
         cwd=projectTest.dir, 
         text=True)
 
-    stdoutTest, stderrTest = subTest.communicate("\n".join(testProject.projectInputs))
+    stdoutTest, stderrTest = subTest.communicate("\n".join(testProject.projectInputs), timeout=10.0)
 
     match stdoutMode:
         case "Ignore":
             grade += 1
         case "Match":
-            print(stdoutBase == stdoutTest)
+            #print(stdoutBase == stdoutTest)
             if stdoutBase == stdoutTest:
                 grade += 1
         case "No Match":
-            print(stdoutBase != stdoutTest)
+            #print(stdoutBase != stdoutTest)
             if stdoutBase != stdoutTest:
                 grade += 1
 
@@ -61,11 +65,11 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> 
         case "Ignore":
             grade += 1
         case "Match":
-            print(stderrBase == stderrTest)
+            #print(stderrBase == stderrTest)
             if stderrBase == stderrTest:
                 grade += 1
         case "No Match":
-            print(stderrBase != stderrTest)
+            #print(stderrBase != stderrTest)
             if stderrBase != stderrTest:
                 grade += 1
 
@@ -73,17 +77,19 @@ def CompareOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> 
         case "Ignore":
             grade += 1
         case "Match":
-            print(subBase.returncode == subTest.returncode)
+            #print(subBase.returncode == subTest.returncode)
             if subBase.returncode == subTest.returncode:
                 grade += 1
         case "No Match":
-            print(subBase.returncode != subTest.returncode)
+            #print(subBase.returncode != subTest.returncode)
             if subBase.returncode != subTest.returncode:
                 grade += 1
     
     return grade / 3.0, grade == 3
 
-def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
+def assertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
+    """
+    """
     testProject: ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
 
     stdoutMode:     Pattern = re.compile(a_arguments["stdout"].literalValue      if isinstance(a_arguments["stdout"], LiteralTestNode)      and a_arguments["stdout"].literalType      == "string" else ".*")
@@ -106,18 +112,18 @@ def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> t
         cwd=project.dir, 
         text=True)
     
-    stdout, stderr = sub.communicate("\n".join(testProject.projectInputs))
+    stdout, stderr = sub.communicate("\n".join(testProject.projectInputs), timeout=10.0)
         
-    if sub.stdout != None:
-        print(f"stdout:\n {stdout.strip()}\n")
-    if sub.stderr != None:
-        print(f"stderr:\n {stderr.strip()}\n")
+    #if sub.stdout != None:
+    #    print(f"stdout:\n {stdout.strip()}\n")
+    #if sub.stderr != None:
+    #    print(f"stderr:\n {stderr.strip()}\n")
 
-    print(F"{stdoutMode.match(stdout.strip())}")
-    print(F"{stderrMode.match(stderr.strip())}")
-    print(F"{returnCodeMode.match(f"{sub.returncode}")}")
+    #print(F"{stdoutMode.match(stdout.strip())}")
+    #print(F"{stderrMode.match(stderr.strip())}")
+    #print(F"{returnCodeMode.match(f"{sub.returncode}")}")
 
-    print(f"Return Code: {sub.returncode} : {2}")
+    #print(f"Return Code: {sub.returncode} : {2}")
 
     if stdoutMode.match(stdout.strip()) is not None:
         grade += 1
@@ -128,20 +134,33 @@ def AssertOutput(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> t
     
     return grade / 3.0, grade == 3
 
-def WalkAST(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
+def walkAST(a_arguments: dict[str, CodeTestNode], a_app: "Autograder") -> tuple[float, bool]:
+    """
+    """
+    #print("a")
     testProject: ProjectTestNode|None = a_arguments["test_project"] if isinstance(a_arguments["test_project"], ProjectTestNode) else None
-    
-    
+    #print("b")
+    pattern: ASTPatternTestNode|None = a_arguments["pattern"] if isinstance(a_arguments["pattern"], ASTPatternTestNode) else None
+    #print("c")
     maxGrade: int = 0
     grade: int = 0
 
-    if testProject is None:
+    if not testProject or not pattern:
+        #print("Leave")
         return grade, False
-    
-    return 1, True
+    #print("d")
+    walker: ASTWalker = ASTWalker(pattern.pattern)
+    #print("e")
+    bon = list(filter(lambda file: file.name == testProject.projectEntrypoint, a_app.instanceData.projects[testProject.projectName].files))
+    #print(bon)
+    amount: int = walker.visit(cast("PythonFile", bon[0]).ast)
+    #print("f")
+    #print(amount)
+    return amount, amount > 0
 
-CodeTest.RegisterTestType("compare_output", CompareOutput)
-CodeTest.RegisterTestType("assert_output", AssertOutput)
+CodeTest.registerTestType("compare_output", compareOutput)
+CodeTest.registerTestType("assert_output", assertOutput)
+CodeTest.registerTestType("walk_ast", walkAST)
 
 #region Outline
 ###

@@ -29,7 +29,9 @@ class AppConfigState:
     grader: Autograder = dataclasses.field(default_factory=Autograder)
     data: dict[str, Any] = dataclasses.field(default_factory=dict)
 
-def HandleInput(a_app: AppConfigState):
+def handleInput(a_app: AppConfigState):
+    """Handle the input of the function.
+    """
     match a_app.screen:
         case Screen.MAIN:
             # 1) Manage Projects
@@ -163,7 +165,7 @@ if __name__ == "__main__":
 
 
     while app.run:
-        HandleInput(app)
+        handleInput(app)
         match app.screen:
             case Screen.MAIN:
                 ...

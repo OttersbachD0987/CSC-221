@@ -5,4 +5,4 @@ class FileType(ABC):
         self.path: str = a_path
         self.name: str = a_name
 
-        print(f"{self.path} : {self.name}")
+        #print(f"{self.path} : {self.name}")

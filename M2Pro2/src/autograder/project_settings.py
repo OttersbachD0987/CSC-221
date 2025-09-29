@@ -1,6 +1,6 @@
 from enum import IntEnum, auto
 from typing import Any, Self
-from util import TryCast, TryGetCast
+from util import tryCast, tryGetCast
 from dataclasses import dataclass
 
 class Requirement(IntEnum):
@@ -15,22 +15,24 @@ class ProjectSettings:
     importLocal: Requirement
 
     @classmethod
-    def FromDict(cls, a_data: dict[str, Any]) -> Self:
+    def fromDict(cls, a_data: dict[str, Any]) -> Self:
+        """Create a Project Settings from a dict.
+        """
         toReturn: ProjectSettings = cls(
-            TryGetCast(
+            tryGetCast(
                 a_data,
                 "import_default",
                 lambda a_key: Requirement(a_key),
                 Requirement.FORBIDDEN
             ), 
             {
-                key: TryCast(
+                key: tryCast(
                     value,
                     Requirement,
                     Requirement.ALLOWED
                 ) for key, value in a_data.get("import_overrides", {}).items()
             }, 
-            TryGetCast(
+            tryGetCast(
                 a_data,
                 "import_local",
                 Requirement,
@@ -40,7 +42,9 @@ class ProjectSettings:
         
         return toReturn
     
-    def ToDict(self) -> dict[str, Any]:
+    def toDict(self) -> dict[str, Any]:
+        """Convert to a dict.
+        """
         return {
             "import_default": int(self.importDefault),
             "import_overrides": {

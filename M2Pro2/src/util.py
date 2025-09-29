@@ -5,7 +5,7 @@ from typing import Callable, TYPE_CHECKING
 if TYPE_CHECKING:
     from project.file_type import FileType
 
-def GetFiles(a_dir: str) -> list["FileType"]:
+def getFiles(a_dir: str) -> list["FileType"]:
     toReturn: list["FileType"] = []
     for fileDescriptor in os.scandir(a_dir):
         if fileDescriptor.is_dir():
@@ -16,7 +16,7 @@ def GetFiles(a_dir: str) -> list["FileType"]:
                     toReturn.append(PythonFile(fileDescriptor.path.removesuffix(fileDescriptor.name).rstrip("\\"), fileDescriptor.name))
     return toReturn
 
-def TryGetCast[K, V, T](a_dict: dict[K, V], a_key: K, a_converter: Callable[[V], T], a_default: T) -> T:
+def tryGetCast[K, V, T](a_dict: dict[K, V], a_key: K, a_converter: Callable[[V], T], a_default: T) -> T:
     data: V|None = a_dict.get(a_key)
     if data is not None:
         try:
@@ -25,7 +25,7 @@ def TryGetCast[K, V, T](a_dict: dict[K, V], a_key: K, a_converter: Callable[[V],
             print(e)
     return a_default
 
-def TryCast[V, R](a_value: V, a_converter: Callable[[V], R], a_default: R) -> R:
+def tryCast[V, R](a_value: V, a_converter: Callable[[V], R], a_default: R) -> R:
     try:
         return a_converter(a_value)
     except:
