@@ -133,6 +133,13 @@ class ASTNodeType(StrEnum):
 
 def isTrue(a_node: expr, a_default: bool = False) -> bool:
     """Check if an expression is true, with a default.
+
+    Args:
+        a_node (expr): The expression to parse for being true.
+        a_default (bool): The default value if a_node fails to parse.
+
+    Returns:
+        (bool): ...
     """
     try:
         if isinstance(a_node, UnaryOp) and isinstance(a_node.op, Not):
@@ -145,12 +152,23 @@ def isTrue(a_node: expr, a_default: bool = False) -> bool:
 
 class ASTPattern:
     def __init__(self, a_nodeType: str|ASTNodeType, a_comparisonData: dict[str, Any]|None = None) -> None:
+        """
+        Args:
+            a_nodeType (str|ASTNodeType): The node type of the ASTPattern, either in string form, or a ASTNodeType enum.
+            a_comparisonData (dict[str, Any]|None): The comparison data for the ASTPattern to use, if none then an empty dictionary.
+        """
         self.nodeType: ASTNodeType = ASTNodeType(a_nodeType) if isinstance(a_nodeType, str) else a_nodeType
         self.comparisonData: dict[str, Any] = {} if a_comparisonData is None else a_comparisonData
     
     @classmethod
     def fromDict(cls, a_data: dict[str, Any]) -> "ASTPattern":
-        """Load ASTPattern from dict.
+        """Load an ASTPattern from a serialized dictionary.
+
+        Args:
+            a_data (dict[str, Any]): A dictionary contianing the serialized ASTPattern information.
+
+        Returns:
+            (ASTPattern): The new ASTPattern instance.
         """
         #print(a_data)
         astTo: ASTPattern = ASTPattern(ASTNodeType(a_data["node_type"]), {})
@@ -177,24 +195,26 @@ class ASTPattern:
                 astTo.comparisonData["name"] = a_data.get("name", ".*")
                 if "context" in a_data:
                     astTo.comparisonData["context"] = ASTPattern.fromDict(a_data["context"])
-            case ASTNodeType.BREAK:
-                ...
-            case ASTNodeType.CONTINUE:
-                ...
             case ASTNodeType.ASSIGN:
-                #print("A")
                 if "match_kind" in a_data:
-                    #print("B")
                     astTo.comparisonData["match_kind"] = a_data["match_kind"]
                     match a_data["match_kind"]:
                         case "target_pattern":
-                            #print("C")
                             astTo.comparisonData["target_pattern"] = ASTPattern.fromDict(a_data["target_pattern"])
+            case ASTNodeType.CALL:
+                ...
+            case ASTNodeType.UNARY_OP:
+                ...
+            case ASTNodeType.ARG:
+                astTo.comparisonData["name"] = a_data.get("name", ".*")
         
         return astTo
 
     def toDict(self) -> dict[str, Any]:
         """Convert to a dictionary.
+
+        Returns:
+            (dict[str, Any]): ...
         """
         return {
             "a": 1
@@ -215,85 +235,91 @@ class ASTWalker(NodeVisitor):
                 collection += self.visit(value)
         return collection
     
-    def visiting(self, node: AST, a_pattern: ASTPattern) -> int:
+    def visiting(self, a_node: AST, a_pattern: ASTPattern) -> int:
         """Function to handle visiting a node.
+
+        Args:
+            a_node (AST): The node to test the pattern against.
+            a_pattern (ASTPattern): The pattern to evaluate.
+        
+        Returns:
+            (int): The number of proper occurences matching the node.
         """
-        #print(node)
         match a_pattern.nodeType:
             case ASTNodeType.WHILE:
-                if isinstance(node, While):
+                if isinstance(a_node, While):
                     if "match_kind" in a_pattern.comparisonData:
                         match a_pattern.comparisonData["match_kind"]:
                             case "test_pattern":
-                                return self.visiting(node.test, a_pattern.comparisonData["test_pattern"])
+                                return self.visiting(a_node.test, a_pattern.comparisonData["test_pattern"])
                             case "test_patterns":
-                                #print(ast.dump(node.test, indent="  "))
-                                #print([testPattern for testPattern in a_pattern.comparisonData["test_patterns"]])
-                                #print([self.visiting(node.test, testPattern) for testPattern in a_pattern.comparisonData["test_patterns"]])
-                                #print([0 < self.visiting(node.test, testPattern) for testPattern in a_pattern.comparisonData["test_patterns"]])
-                                #print(any([0 < self.visiting(node.test, testPattern) for testPattern in a_pattern.comparisonData["test_patterns"]]))
-                                return 1 if any([0 < self.visiting(node.test, testPattern) for testPattern in a_pattern.comparisonData["test_patterns"]]) else 0
-                    #print("Ending")
+                                return 1 if any([0 < self.visiting(a_node.test, testPattern) for testPattern in a_pattern.comparisonData["test_patterns"]]) else 0
                     return 1
             case ASTNodeType.CONSTANT:
-                if isinstance(node, Constant):
+                if isinstance(a_node, Constant):
                     if "match_kind" in a_pattern.comparisonData:
                         match a_pattern.comparisonData["match_kind"]:
                             case "regex":
-                                return 1 if re.search(cast(str, a_pattern.comparisonData["kind_match"]), str(node.kind)) and re.search(a_pattern.comparisonData["value_match"], str(node.value)) else 0
+                                return 1 if re.search(cast(str, a_pattern.comparisonData["kind_match"]), str(a_node.kind)) and re.search(a_pattern.comparisonData["value_match"], str(a_node.value)) else 0
                             case "is_true":
-                                return 1 if isTrue(node, a_pattern.comparisonData["default_val"]) == a_pattern.comparisonData["value"] else 0
+                                return 1 if isTrue(a_node, a_pattern.comparisonData["default_val"]) == a_pattern.comparisonData["value"] else 0
                     return 1
             case ASTNodeType.COMPARE:
-                if isinstance(node, Compare):
+                if isinstance(a_node, Compare):
+                    
                     return 1
             case ASTNodeType.CALL:
-                if isinstance(node, Call):
+                if isinstance(a_node, Call):
+                    a_node.func
+                    a_node.keywords
+                    a_node.args
                     return 1
             case ASTNodeType.UNARY_OP:
-                if isinstance(node, UnaryOp):
+                if isinstance(a_node, UnaryOp):
+                    
+                    a_node.op
+                    a_node.operand
                     return 1
             case ASTNodeType.NOT:
-                if isinstance(node, Not):
+                if isinstance(a_node, Not):
                     return 1
             case ASTNodeType.GREATER_THAN:
-                if isinstance(node, Gt):
+                if isinstance(a_node, Gt):
                     return 1
             case ASTNodeType.GREATER_THAN_OR_EQUAL_TO:
-                if isinstance(node, GtE):
+                if isinstance(a_node, GtE):
                     return 1
             case ASTNodeType.LESS_THAN:
-                if isinstance(node, Lt):
+                if isinstance(a_node, Lt):
                     return 1
             case ASTNodeType.LESS_THAN_OR_EQUAL_TO:
-                if isinstance(node, LtE):
+                if isinstance(a_node, LtE):
                     return 1
             case ASTNodeType.EQUAL:
-                if isinstance(node, Eq):
+                if isinstance(a_node, Eq):
                     return 1
             case ASTNodeType.NOT_EQUAL:
-                if isinstance(node, NotEq):
+                if isinstance(a_node, NotEq):
                     return 1
             case ASTNodeType.FUNCTION_DEF:
-                if isinstance(node, FunctionDef):
+                if isinstance(a_node, FunctionDef):
                     return 1
             case ASTNodeType.IMPORT:
-                if isinstance(node, Import):
+                if isinstance(a_node, Import):
                     return 1
             case ASTNodeType.IMPORT_FROM:
-                if isinstance(node, ImportFrom):
+                if isinstance(a_node, ImportFrom):
                     return 1
             case ASTNodeType.NAME:
-                if isinstance(node, Name):
-                    #print(ast.dump(node, indent="  "))
-                    if "context" in a_pattern.comparisonData and self.visiting(node.ctx, a_pattern.comparisonData["context"]) == 0:
+                if isinstance(a_node, Name):
+                    if "context" in a_pattern.comparisonData and self.visiting(a_node.ctx, a_pattern.comparisonData["context"]) == 0:
                         return 0
-                    return 1 if re.search(a_pattern.comparisonData["name"], node.id) else 0
+                    return 1 if re.search(a_pattern.comparisonData["name"], a_node.id) else 0
             case ASTNodeType.LOAD:
-                if isinstance(node, Load):
+                if isinstance(a_node, Load):
                     return 1
             case ASTNodeType.SET:
-                if isinstance(node, Set):
+                if isinstance(a_node, Set):
                     return 1
             case ASTNodeType.DEL:
                 ...
@@ -302,22 +328,24 @@ class ASTWalker(NodeVisitor):
             case ASTNodeType.ALIAS:
                 ...
             case ASTNodeType.AND:
-                ...
+                if isinstance(a_node, And):
+                    return 1
             case ASTNodeType.ANN_ASSIGN:
                 ...
             case ASTNodeType.ARG:
-                ...
+                if isinstance(a_node, arg):
+                    return 1 if re.search(a_pattern.comparisonData["name"], a_node.arg) else 0
             case ASTNodeType.ARGUMENTS:
                 ...
             case ASTNodeType.ASSERT:
                 ...
             case ASTNodeType.ASSIGN:
                 #print("Assign?")
-                if isinstance(node, Assign):
+                if isinstance(a_node, Assign):
                     if "match_kind" in a_pattern.comparisonData:
                         match a_pattern.comparisonData["match_kind"]:
                             case "target_pattern":
-                                return self.visiting(node.targets[0], a_pattern.comparisonData["target_pattern"])
+                                return self.visiting(a_node.targets[0], a_pattern.comparisonData["target_pattern"])
                     else:
                         return 1
             case ASTNodeType.ASYNC_FOR:
@@ -343,7 +371,7 @@ class ASTWalker(NodeVisitor):
             case ASTNodeType.BOOL_OP:
                 ...
             case ASTNodeType.BREAK:
-                if isinstance(node, Break):
+                if isinstance(a_node, Break):
                     return 1
             case ASTNodeType.CLASS_DEF:
                 ...
@@ -352,7 +380,7 @@ class ASTWalker(NodeVisitor):
             case ASTNodeType.COMPREHENSION:
                 ...
             case ASTNodeType.CONTINUE:
-                if isinstance(node, Continue):
+                if isinstance(a_node, Continue):
                     return 1
             case ASTNodeType.DELETE:
                 ...
