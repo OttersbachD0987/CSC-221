@@ -1,9 +1,8 @@
-def foobar(foo: int) -> None:
-    print(foo)
+class Foobar:
+    def __init__(self) -> None:
+        self.foo: int = 0
 
-bar: int = 3
-
-foobar(2)
-foobar(foo=2)
-foobar(bar)
-foobar(foo=bar)
+class Bar(Foobar):
+    def __init__(self) -> None:
+        super().__init__()
+        self.qux: float = 2

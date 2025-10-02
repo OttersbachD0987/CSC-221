@@ -1,3 +1,5 @@
+from typing import override
+
 # pylint: disable=line-too-long, trailing-whitespace
 
 class Recipe:
@@ -82,10 +84,7 @@ class Recipe:
     def display_recipe(self) -> None:
         """Prints the recipe information using the print statement.
         """
-        print(f"{self.__name}\nIngredients: ({", ".join(self.__ingredients)})")
-    
-    def __repr__(self) -> str:
-        return f"{self.__name} ({self.__ingredients})"
+        print(f"{self.__name}\nVegetarian: {self.__is_vegetarian}\nIngredients: ({self.__ingredients})\nSteps:\n{"\n".join(f"{i + 1}" for i, step in enumerate(self.__steps))}")
 
 class DessertRecipe(Recipe):
     def __init__(self, a_name: str, a_ingredients: list[str], a_steps: list[str], a_isVegetarian: bool, a_sweetnessLevel: int) -> None:
@@ -116,6 +115,12 @@ class DessertRecipe(Recipe):
             a_sweetnessLevel (int): The new sweetness level of the recipe between 1-10.
         """
         self.__sweetness_level = a_sweetnessLevel
+    
+    @override
+    def display_recipe(self) -> None:
+        """Prints the recipe information using the print statement.
+        """
+        print(f"{self.__name}\nVegetarian: {self.__is_vegetarian}\nSweetness Level: {self.__sweetness_level}\nIngredients: ({self.__ingredients})\nSteps:\n{"\n".join(f"{i + 1}" for i, step in enumerate(self.__steps))}")
 
 class MainCourseRecipe(Recipe):
     def __init__(self, a_name: str, a_ingredients: list[str], a_steps: list[str], a_isVegetarian: bool, a_spiceLevel: int) -> None:
@@ -146,3 +151,10 @@ class MainCourseRecipe(Recipe):
             a_spiceLevel (int): The new spice level of the recipe between 1-5.
         """
         self.__spice_level = a_spiceLevel
+    
+    @override
+    def display_recipe(self) -> None:
+        """Prints the recipe information using the print statement.
+        """
+        print(
+            f"{self.__name}\nVegetarian: {self.__is_vegetarian}\nSpice Level: {self.__spice_level}\nIngredients: ({self.__ingredients})\nSteps:\n{"\n".join(f"{i + 1}" for i, step in enumerate(self.__steps))}")
