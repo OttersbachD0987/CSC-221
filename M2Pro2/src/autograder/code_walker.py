@@ -340,7 +340,6 @@ class ASTWalker(NodeVisitor):
             case ASTNodeType.ASSERT:
                 ...
             case ASTNodeType.ASSIGN:
-                #print("Assign?")
                 if isinstance(a_node, Assign):
                     if "match_kind" in a_pattern.comparisonData:
                         match a_pattern.comparisonData["match_kind"]:
