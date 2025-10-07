@@ -84,7 +84,7 @@ class Recipe:
     def display_recipe(self) -> None:
         """Prints the recipe information using the print statement.
         """
-        print(f"{self.__name}\nVegetarian: {self.__is_vegetarian}\nIngredients: ({self.__ingredients})\nSteps:\n{"\n".join(f"{i + 1}" for i, step in enumerate(self.__steps))}")
+        print(f"{self.__name}\nVegetarian: {self.__is_vegetarian}\nIngredients: ({", ".join(self.__ingredients)})\nSteps:\n{"\n".join(f"{i + 1}. {step}" for i, step in enumerate(self.__steps))}")
 
 class DessertRecipe(Recipe):
     def __init__(self, a_name: str, a_ingredients: list[str], a_steps: list[str], a_isVegetarian: bool, a_sweetnessLevel: int) -> None:
@@ -120,7 +120,7 @@ class DessertRecipe(Recipe):
     def display_recipe(self) -> None:
         """Prints the recipe information using the print statement.
         """
-        print(f"{self.__name}\nVegetarian: {self.__is_vegetarian}\nSweetness Level: {self.__sweetness_level}\nIngredients: ({self.__ingredients})\nSteps:\n{"\n".join(f"{i + 1}" for i, step in enumerate(self.__steps))}")
+        print(f"{self._Recipe__name}\nVegetarian: {self._Recipe__is_vegetarian}\nSweetness Level: {self.__sweetness_level}\nIngredients: ({", ".join(self._Recipe__ingredients)})\nSteps:\n{"\n".join(f"{i + 1}. {step}" for i, step in enumerate(self._Recipe__steps))}")
 
 class MainCourseRecipe(Recipe):
     def __init__(self, a_name: str, a_ingredients: list[str], a_steps: list[str], a_isVegetarian: bool, a_spiceLevel: int) -> None:
@@ -157,4 +157,4 @@ class MainCourseRecipe(Recipe):
         """Prints the recipe information using the print statement.
         """
         print(
-            f"{self.__name}\nVegetarian: {self.__is_vegetarian}\nSpice Level: {self.__spice_level}\nIngredients: ({self.__ingredients})\nSteps:\n{"\n".join(f"{i + 1}" for i, step in enumerate(self.__steps))}")
+            f"{self._Recipe__name}\nVegetarian: {self._Recipe__is_vegetarian}\nSpice Level: {self.__spice_level}\nIngredients: ({", ".join(self._Recipe__ingredients)})\nSteps:\n{"\n".join(f"{i + 1}. {step}" for i, step in enumerate(self._Recipe__steps))}")
