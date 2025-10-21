@@ -108,3 +108,10 @@ Resources
 •	Pandas Documentation
 •	HTTP Status Codes
 ________________________________________
+
+
+Run 2+ Coding standards, take screenshots before and after fixing code.
+
+2 testing scenarios for each function, screenshots of results
+
+Exception handling.
