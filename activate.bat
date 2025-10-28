@@ -1,10 +1,18 @@
 @echo off
 
+echo Checking the Virtual Environment...
 if exist ".\venv" (
-    echo venv exists.
+    echo The Virtual Environment already exists.
 ) else (
-    echo venv does not exist, creating now.
+    echo The Virtual Environment does not exist, creating now.
     py -m venv venv
+    echo The Virtual Environment has been created.
 )
 
-./venv/Scripts/activate.bat
+echo:
+
+echo Activating the Virtual Environment...
+call venv/Scripts/activate.bat
+echo The Virtual Environment has been activated.
+
+call dependencies.bat install_log.balrog

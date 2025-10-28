@@ -2,7 +2,7 @@ Introduction:
 Assignment requires using all the skills learn to this point. Since the program will also require using sql commands to retrieve information from tables, a concepts not required for this class, students can consider using AI if needed
 
 Instructions:
-This assignment requires reading and evaluating database content. The database you are to work on for this assignment is linked on in the assignment post on Bb ( name of sqlite database is �vet_serv.db�). make sure you download the database and save it in the project folder.
+This assignment requires reading and evaluating database content. The database you are to work on for this assignment is linked on in the assignment post on Bb ( name of sqlite database is `vet_serv.db`). make sure you download the database and save it in the project folder.
 
 About the Database.
 The program you will create is going to retrieve information from the database you were provided. However, in order to retrieve information from a database, we need to know several things:
