@@ -16,3 +16,5 @@ call venv/Scripts/activate.bat
 echo The Virtual Environment has been activated.
 
 call dependencies.bat install_log.balrog
+
+echo Activation has been completed.

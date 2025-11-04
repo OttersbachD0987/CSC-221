@@ -3,3 +3,5 @@ numpy
 openpyxl
 flake8
 pylint
+nltk
+windows-curses
