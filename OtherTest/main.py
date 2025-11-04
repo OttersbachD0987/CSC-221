@@ -39,7 +39,7 @@ class Serializable(ABC):
         ...
     
     @abstractmethod
-    def ToDict(cls) -> AnyDict:
+    def ToDict(self) -> AnyDict:
         ...
 
 @dataclass
@@ -50,7 +50,14 @@ class EntityType(Serializable):
     @override
     @classmethod
     def FromDict(cls, a_data: AnyDict) -> EntityType:
-        ...
+        return cls(a_data["name"], a_data["description"])
+    
+    @override
+    def ToDict(self) -> AnyDict:
+        return {
+            "name": self.name,
+            "description": self.description
+        }
 
 @dataclass
 class Entity:
