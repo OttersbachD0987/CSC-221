@@ -1,49 +1,31 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+import json
+from json import JSONDecodeError
+import os
+
+from data.Registry import Registry
+from data.Mod import ModHeader, ModHeaderDict, Version
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Self, TypeAlias, Any, override
-    from collections.abc import Callable
-    
-    AnyDict: TypeAlias = dict[str, Any]
+    from typing import Self, override
+    from Typing import AnyDict, JSONSerializable, UInt
 
-class Registry[T]:
-    def __init__(self) -> None:
-        self.entries: list[T] = []
-    
-    def Register(self, a_registerable: T) -> int:
-        self.entries.append(a_registerable)
-        return len(self.entries) - 1
-    
-    def FindFirst(self, a_predicate: Callable[[T], bool]) -> int:
-        for i in range(len(self.entries)):
-            if a_predicate(self.entries[i]):
-                return i
-        return -1
-    
-    def FindAll(self, a_predicate: Callable[[T], bool]) -> list[int]:
-        return [i for i in range(len(self.entries)) if a_predicate(self.entries[i])]
-    
-    def FindLast(self, a_predicate: Callable[[T], bool]) -> int:
-        for i in range(len(self.entries) - 1, -1, -1):
-            if a_predicate(self.entries[i]):
-                return i
-        return -1
-
-class Serializable(ABC):
+class Serializable[**PL, **PS](ABC):
     @abstractmethod
     @classmethod
-    def FromDict(cls, a_data: AnyDict) -> Self:
+    def FromDict(cls, a_data: AnyDict, *a_args: PL.args, **a_kwargs: PL.kwargs) -> Self:
         ...
     
     @abstractmethod
-    def ToDict(self) -> AnyDict:
+    def ToDict(self, *a_args: PS.args, **a_kwargs: PS.kwargs) -> AnyDict:
         ...
 
 @dataclass
-class EntityType(Serializable):
+class EntityType(Serializable[[], []]):
     name: str
     description: str
     
@@ -60,7 +42,25 @@ class EntityType(Serializable):
         }
 
 @dataclass
-class Entity:
+class Entity(Serializable[[], []]):
     x: int
     y: int
-    type: int
+    type: UInt
+
+def main() -> None:
+    entityTypeRegistry: Registry[EntityType] = Registry[EntityType]()
+    modPath: str = os.path.join(os.getcwd(), "Mods")
+    for I_file in os.scandir(".\\Mods"):
+        if os.path.isdir(I_file) and (modDataPath := os.path.isfile(os.path.join(modPath, "mod.json"))):
+            try:
+                with open(modDataPath) as modDataFile:
+                    data: ModHeaderDict = json.load(modDataFile)
+                    mod: ModHeader = ModHeader(data["name"], data["description"], I_file.name.replace(" ", "_").lower(), data["version"])
+                    
+            except JSONDecodeError as e:
+                print(e)
+            except TypeError as e:
+                print(e)
+
+if __name__ == "__main__":
+    main()

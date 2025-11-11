@@ -5,3 +5,4 @@ flake8
 pylint
 nltk
 windows-curses
+annotated-types
