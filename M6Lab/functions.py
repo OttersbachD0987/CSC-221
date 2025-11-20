@@ -1,6 +1,7 @@
 from pandas import DataFrame
 from matplotlib import pyplot
 import pandas
+import seaborn as sb
 
 def DisplayMenu() -> None:
     """Displays the menu.
@@ -12,7 +13,9 @@ def DisplayTopRecords(a_data: DataFrame) -> None:
     """
     print(a_data.head(15))
     _, ax = pyplot.subplots()
-    a_data.head(15).plot(kind="bar", ax=ax, title="Top 15 Parks", legend=True)
+    ax.set_title("Top 15 Parks")
+    sb.barplot(a_data.head(15), ax=ax, legend=True)
+    #a_data.head(15).plot(kind="bar", ax=ax, title="Top 15 Parks", legend=True)
     #ax.legend(["# Of Parks"])
     pyplot.savefig("top_records.png")
     pyplot.show()
@@ -27,7 +30,11 @@ def NumberOfParksByState(a_data: DataFrame) -> None:
     """
     print("\n".join([f"{state}: {parkCount}" for state, parkCount in a_data.pivot(values=["park name"], columns=["park name"], index=["state"]).count(axis=1).items()]))
     _, ax = pyplot.subplots()
-    a_data.pivot(values=["park name"], columns=["park name"], index=["state"]).count(axis=1).plot(kind="bar", ax=ax, title="Parks By State", legend=True, xlabel="State", ylabel="# Of Parks")
+    ax.set_title("Parks By State")
+    ax.set_xlabel("State")
+    ax.set_ylabel("# Of Parks")
+    sb.barplot(a_data.pivot(values=["park name"], columns=["park name"], index=["state"]).count(axis=1), ax=ax, legend=True)
+    #a_data.pivot(values=["park name"], columns=["park name"], index=["state"]).count(axis=1).plot(kind="bar", ax=ax, title="Parks By State", legend=True, xlabel="State", ylabel="# Of Parks")
     ax.legend(["# Of Parks"])
     pyplot.savefig("parks_by_state.png")
     pyplot.show()
@@ -37,7 +44,11 @@ def NumberOfParksByRegion(a_data: DataFrame) -> None:
     """
     print("\n".join([f"{region}: {parkCount}" for region, parkCount in a_data.pivot(values=["park name"], columns=["park name"], index=["Region"]).count(axis=1).items()]))
     _, ax = pyplot.subplots()
-    a_data.pivot(values=["park name"], columns=["park name"], index=["Region"]).count(axis=1).plot(kind="bar", ax=ax, title="Parks By Region", legend=True, xlabel="Region", ylabel="# Of Parks")
+    ax.set_title("Parks By Region")
+    ax.set_xlabel("Region")
+    ax.set_ylabel("# Of Parks")
+    sb.barplot(a_data.pivot(values=["park name"], columns=["park name"], index=["Region"]).count(axis=1), ax=ax, legend=True)
+    #a_data.pivot(values=["park name"], columns=["park name"], index=["Region"]).count(axis=1).plot(kind="bar", ax=ax, title="Parks By Region", legend=True, xlabel="Region", ylabel="# Of Parks")
     ax.legend(["# Of Parks"])
     pyplot.savefig("parks_by_region.png")
     pyplot.show()
@@ -45,30 +56,25 @@ def NumberOfParksByRegion(a_data: DataFrame) -> None:
 def TopParksByAcreagePerRegion(a_data: DataFrame) -> None:
     """Display the top two parks by acerage per region.
     """
-    counter1 = 0
-    counter2 = 0
-    t: DataFrame = DataFrame(index=["acreage"])
-    p: list[list[str]] = []
+    theMasterDataFrame: DataFrame = DataFrame(index=["acreage"])
+    theListHolder: list[list[str]] = []
     for region in a_data["Region"].unique():
-        counter1+=1
-        p.append([])
+        theListHolder.append([])
         print(datable := a_data[a_data["Region"] == region].sort_values("acreage").head(2)[["Region", "acreage", "park name"]])
-        for a in datable.values:
-            counter2+=1
-            p[-1].append(name := "".join(str(b) for b in a.tolist() if not isinstance(b, int)))
-            print(name)
-            print(t)
-            print(DataFrame({name: a[1]}, index=["acreage"]))
-            t = t.join(DataFrame({name: a[1]}, index=["acreage"]), how="outer")
-    print(p)
-    print(t)
-    
-    print(counter1)
-    print(counter2)
-    print([tuple(e) for e in p])
-    print(t.columns)
-    fig, ax = pyplot.subplots()
-    t.plot(y="acreage", kind="bar", ax=ax, sharex=True, sharey=True, layout=(1, len(a_data["Region"].unique())), title="Parks By Region", legend=True, subplots=[tuple(e) for e in p])
+        for value in datable.values:
+            theListHolder[-1].append(name := "".join(str(valueIter) for valueIter in value.tolist() if not isinstance(valueIter, int)))
+            theMasterDataFrame = theMasterDataFrame.join(DataFrame({name: value[1]}, index=["acreage"]), how="outer")
+
+    fig, ax = pyplot.subplots(nrows=1, ncols=len(a_data["Region"].unique()), figsize=(1, len(a_data["Region"].unique())))
+    for index, categories in enumerate(theListHolder):
+        holderFrame = DataFrame()
+        for category in categories:
+            holderFrame = holderFrame.join(theMasterDataFrame[category], how="outer")
+
+        sb.barplot(holderFrame, ax=ax[index], legend=True)
+
+    #fig, ax = pyplot.subplots()
+    #t.plot(kind="bar", ax=ax, sharex=True, sharey=True, layout=(1, len(a_data["Region"].unique())), title="Parks By Region", legend=True, subplots=[tuple(e) for e in p])
     #ax.legend(["# Of Parks"])
     pyplot.savefig("parks_by_acreage_by_region.png")
     pyplot.show()
@@ -78,7 +84,11 @@ def StateParksWithWaterfallsByState(a_data: DataFrame) -> None:
     """
     print(a_data[a_data["Feature"].str.contains("waterfalls", False)])
     _, ax = pyplot.subplots()
-    a_data[a_data["Feature"].str.contains("waterfalls", False)].pivot(values=["park name"], columns="park name", index="state").count(axis=1).plot(kind="bar", ax=ax, title="Parks With Waterfalls", legend=True, xlabel="State", ylabel="# Of Parks")
+    ax.set_title("Parks With Waterfalls")
+    ax.set_xlabel("State")
+    ax.set_ylabel("# Of Parks")
+    sb.barplot(a_data[a_data["Feature"].str.contains("waterfalls", False)].pivot(values=["park name"], columns="park name", index="state").count(axis=1), ax=ax, legend=True)
+    #a_data[a_data["Feature"].str.contains("waterfalls", False)].pivot(values=["park name"], columns="park name", index="state").count(axis=1).plot(kind="bar", ax=ax, title="Parks With Waterfalls", legend=True, xlabel="State", ylabel="# Of Parks")
     ax.legend(["# Of Parks"])
     pyplot.savefig("parks_with_waterfalls.png")
     pyplot.show()
@@ -91,6 +101,11 @@ def SearchParksByFeature(a_data: DataFrame) -> None:
     if (a_data["Feature"].str.contains(feature, False)).any():
         print(a_data[a_data["Feature"].str.contains(feature, False)])
         _, ax = pyplot.subplots()
+        ax.set_xlabel("State")
+        ax.set_title(f"Parks By {feature.title()}")
+        sb.barplot(a_data[a_data["Feature"].str.contains(feature, False)].pivot(values=["park name"], columns="park name", index="state").count(axis=1), ax=ax, legend=True)
+        ax.set_ylabel("# Of Parks")
+
         a_data[a_data["Feature"].str.contains(feature, False)].pivot(values=["park name"], columns="park name", index="state").count(axis=1).plot(kind="bar", ax=ax, title=f"Parks By {feature.title()}", legend=True, xlabel="State", ylabel="# Of Parks")
         #ax.legend(["# Of Parks"])
         pyplot.savefig(f"parks_by_{feature}.png")
@@ -107,7 +122,10 @@ def ParksByStateCode(a_data: DataFrame) -> None:
         stateCode = input("Valid states are Georgia, Maryland, North Carolina, South Carolina and Virginia:\nState Code: ").upper().strip()
     print(a_data[a_data["State Codes"] == stateCode])
     _, ax = pyplot.subplots()
-    a_data[a_data["State Codes"] == stateCode].plot(kind="bar", ax=ax, title="Parks By State Code", legend=True)
+    ax.set_title("Parks By State Code")
+    sb.barplot(a_data[a_data["State Codes"] == stateCode], ax=ax, legend=True)
+
+    #a_data[a_data["State Codes"] == stateCode].plot(kind="bar", ax=ax, title="Parks By State Code", legend=True)
     #ax.legend(["# Of Parks"])
     pyplot.savefig("parks_by_state_code.png")
     pyplot.show()

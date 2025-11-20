@@ -1,24 +1,8 @@
 import sqlite3 as sql
 from sqlite3 import Connection, Cursor
-import pandas as pd
 from pandas import DataFrame
 
-from functions import intput
-
-"""
-* OWNER table
-    * (OwnerId, OwnerLastName, OwnerFirstName, OwnerPhone, OwnerEmail)
-    * The primary key is OwnerId
-* PETS table
-    * (PetId, PetName, PetType, PetBreed, PetDOB, Service, Date, Charge, OwnerId)
-    * Primary key is PetId
-    * Foreign key is OwnerId
-"""
-
-def displayOptions() -> None:
-    """Display the options.
-    """
-    print("Options:\n1) Display OWNER content\n2) Display PETS content\n3) Retrieve Owner and Pet data for specific Owner\n4) Calculate Total Charge by Owner\n5) Retrieve Pet information by PetBreed\n6) Exit\n")
+from functions import intput, displayOptions
 
 def main() -> None:
     """Main function.
