@@ -1,4 +1,29 @@
+from __future__ import annotations
+
 import pygame
+from pygame import Surface
+from dataclasses import dataclass
+from abc import ABC
+
+@dataclass
+class TextureStuff:
+    texture: Surface
+    size: tuple[int, int]
+    
+    @classmethod
+    def Load(cls, a_path: str) -> TextureStuff:
+        cls((tex := pygame.image.load(a_path)), tex.size)
+
+@dataclass
+class Component(ABC):
+    componentID: str
+
+class StatComponent(Component):
+    ...
+
+@dataclass
+class Entity:
+    size: tuple[int, int]
 
 pygame.init()
 screen = pygame.display.set_mode((600, 600))
